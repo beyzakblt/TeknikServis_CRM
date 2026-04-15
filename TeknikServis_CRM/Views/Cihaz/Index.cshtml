@@ -1,0 +1,252 @@
+﻿@{
+    ViewData["Title"] = "Cihaz Portföy Yönetimi";
+}
+
+<style>
+    /* Profesyonel Tablo Koruması */
+    .device-table { table-layout: fixed; width: 100%; }
+    .col-info { width: 35%; }
+    .col-owner { width: 25%; }
+    .col-serial { width: 25%; }
+    .col-action { width: 15%; }
+
+    /* Uzun notların tabloyu patlatmasını engeller */
+    .note-preview {
+        display: block;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+
+    .badge-marka {
+        background-color: #e0e7ff;
+        color: #4338ca;
+        font-weight: 600;
+        border: 1px solid #c7d2fe;
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4 position-sticky" style="top: 20px;">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 me-3">
+                            <i class="bi bi-pc-display text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Cihaz Kaydı</h5>
+                            <small class="text-muted">Teknik servis giriş formu</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <form id="cihazEkleForm">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-uppercase text-muted">Müşteri Seçimi</label>
+                            <select name="MusteriId" id="MusteriId" class="form-select border-0 bg-light rounded-3 shadow-none" asp-items="ViewBag.Musteriler" required>
+                                <option value="">--- Müşteri Seçiniz ---</option>
+                            </select>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Marka</label>
+                                <input type="text" name="Marka" class="form-control border-0 bg-light rounded-3 shadow-none" placeholder="Örn: HP" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Model</label>
+                                <input type="text" name="Model" class="form-control border-0 bg-light rounded-3 shadow-none" placeholder="Örn: Victus" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-uppercase text-muted">Seri No / IMEI</label>
+                            <input type="text" name="SeriNo" class="form-control border-0 bg-light rounded-3 shadow-none" placeholder="S/N: 123456789">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-uppercase text-muted">Cihaz Durum Notu</label>
+                            <textarea name="CihazNotu" class="form-control border-0 bg-light rounded-3 shadow-none" rows="4" placeholder="Cihazdaki fiziksel hasarlar veya kullanıcı şikayeti..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-3 shadow-sm transition-all">
+                            <i class="bi bi-cloud-arrow-up-fill me-2"></i>SİSTEME KAYDET
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-list-ul me-2 text-primary"></i>Cihaz Portföyü</h5>
+                    <button onclick="loadCihazlar()" class="btn btn-light btn-sm rounded-pill px-3 border">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                <div class="card-body p-0 mt-3">
+                    <div class="table-responsive">
+                        <table class="table device-table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4 py-3 col-info">Cihaz / Arıza Notu</th>
+                                    <th class="py-3 col-owner">Sahibi</th>
+                                    <th class="py-3 col-serial">Seri No</th>
+                                    <th class="text-end pe-4 py-3 col-action">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cihazTableBody"></tbody>
+                        </table>
+                        <div id="tableLoader" class="text-center py-5">
+                            <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-0">Cihaz Bilgilerini Güncelle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="cihazGuncelleForm">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="Id" id="editId">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Müşteri</label>
+                        <select name="MusteriId" id="editMusteriId" class="form-select rounded-3 bg-light border-0" asp-items="ViewBag.Musteriler" required></select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Marka</label>
+                            <input type="text" name="Marka" id="editMarka" class="form-control rounded-3 bg-light border-0" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Model</label>
+                            <input type="text" name="Model" id="editModel" class="form-control rounded-3 bg-light border-0" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Seri No</label>
+                        <input type="text" name="SeriNo" id="editSeriNo" class="form-control rounded-3 bg-light border-0">
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold">Cihaz Notu</label>
+                        <textarea name="CihazNotu" id="editCihazNotu" class="form-control rounded-3 bg-light border-0" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Vazgeç</button>
+                    <button type="submit" class="btn btn-primary rounded-3 px-4">Güncellemeyi Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    $(document).ready(function () {
+        loadCihazlar();
+
+        $("#cihazEkleForm").submit(function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: "/Cihaz/Ekle",
+                type: "POST",
+                data: $(this).serialize(),
+                success: function (r) {
+                    if (r.success) {
+                        $("#cihazEkleForm")[0].reset();
+                        loadCihazlar();
+                    } else { alert(r.message); }
+                }
+            });
+        });
+
+        $("#cihazGuncelleForm").submit(function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: "/Cihaz/Guncelle",
+                type: "POST",
+                data: $(this).serialize(),
+                success: function (r) {
+                    if (r.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+                        loadCihazlar();
+                    }
+                }
+            });
+        });
+    });
+
+    function loadCihazlar() {
+        $("#tableLoader").show();
+        $("#cihazTableBody").empty();
+        $.get("/Cihaz/GetCihazListesi", function (data) {
+            $("#tableLoader").hide();
+            $.each(data, function (i, item) {
+                let row = `
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex flex-column">
+                            <div class="mb-1">
+                                <span class="badge badge-marka small">${item.marka}</span>
+                                <span class="fw-bold ms-1 text-dark">${item.model}</span>
+                            </div>
+                            <span class="note-preview" title="${item.cihazNotu || ''}">${item.cihazNotu || '-'}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-secondary bg-opacity-10 p-1 rounded-circle me-2">
+                                <i class="bi bi-person-fill text-secondary" style="font-size: 0.8rem;"></i>
+                            </div>
+                            <span class="small fw-semibold">${item.musteriAd}</span>
+                        </div>
+                    </td>
+                    <td><code class="text-primary small fw-bold">${item.seriNo || 'YOK'}</code></td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group shadow-sm rounded-3">
+                            <button onclick="editCihaz(${item.id})" class="btn btn-white btn-sm border-end" title="Düzenle">
+                                <i class="bi bi-pencil-square text-primary"></i>
+                            </button>
+                            <button onclick="deleteCihaz(${item.id})" class="btn btn-white btn-sm" title="Sil">
+                                <i class="bi bi-trash3 text-danger"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+                $("#cihazTableBody").append(row);
+            });
+        });
+    }
+
+    function editCihaz(id) {
+        $.get("/Cihaz/GetCihaz", { id: id }, function (d) {
+            if (d) {
+                $("#editId").val(d.id);
+                $("#editMusteriId").val(d.musteriId);
+                $("#editMarka").val(d.marka);
+                $("#editModel").val(d.model);
+                $("#editSeriNo").val(d.seriNo);
+                $("#editCihazNotu").val(d.cihazNotu);
+                new bootstrap.Modal(document.getElementById('editModal')).show();
+            }
+        });
+    }
+
+    function deleteCihaz(id) {
+        if (confirm("Kayıt silinecektir, onaylıyor musunuz?")) {
+            $.post("/Cihaz/Sil", { id: id }, function (r) { if (r.success) loadCihazlar(); });
+        }
+    }
+</script>
+}

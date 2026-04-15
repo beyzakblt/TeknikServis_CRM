@@ -1,0 +1,183 @@
+﻿@{ Layout = null; }
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Giriş Paneli - CRM Enterprise</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { background: #f1f5f9; height: 100vh; display: flex; align-items: center; font-family: 'Inter', sans-serif; overflow: hidden; }
+        
+        .auth-card { 
+            border: none; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1); 
+            background: #fff; 
+            height: 600px; 
+            width: 100%;
+            max-width: 420px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-section { 
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+            display: none; 
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .auth-section.active { display: flex; }
+
+        .fade-anim { animation: fadeInAnim 0.4s ease-in-out; }
+        @@keyframes fadeInAnim { from { opacity: 0; } to { opacity: 1; } }
+
+        .btn-primary { border-radius: 12px; padding: 12px; font-weight: 600; background: #2563eb; border: none; transition: 0.3s; }
+        .form-control { border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; background: #f8fafc; }
+        
+        .verify-badge {
+            width: 70px; height: 70px; background: rgba(16, 185, 129, 0.1);
+            color: #10b981; border-radius: 20px; display: flex;
+            align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 20px;
+        }
+
+        #messageBox { position: absolute; bottom: 20px; left: 40px; right: 40px; border-radius: 12px; z-index: 100; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container d-flex justify-content-center">
+    <div class="card auth-card">
+        
+        <div id="login-section" class="auth-section active">
+            <div class="text-center mb-4">
+                <i class="bi bi-shield-lock-fill text-primary display-5"></i>
+                <h3 class="fw-bold mt-2">CRM Giriş</h3>
+                <p class="text-muted small">Lütfen oturum açın</p>
+            </div>
+            <form id="loginForm">
+                <input type="text" name="kullaniciAdi" class="form-control mb-3" placeholder="Kullanıcı Adı" required>
+                <input type="password" name="sifre" class="form-control mb-3" placeholder="Şifre" required>
+                <div class="d-flex justify-content-between mb-4 small">
+                    <label style="cursor:pointer;"><input type="checkbox" name="beniHatirla"> Hatırla</label>
+                    <a href="javascript:void(0)" onclick="switchSection('forgot-section')" class="text-primary fw-bold text-decoration-none">Şifremi Unuttum</a>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 shadow-sm">GİRİŞ YAP</button>
+                <p class="text-center small mt-4">Hesabınız yok mu? <a href="javascript:void(0)" onclick="switchSection('register-section')" class="text-primary fw-bold text-decoration-none">Kaydol</a></p>
+            </form>
+        </div>
+
+        <div id="register-section" class="auth-section">
+            <h3 class="fw-bold text-center mb-4">Üye Ol</h3>
+            <form id="registerForm">
+                <div class="row g-2 mb-3">
+                    <div class="col"><input type="text" name="Ad" class="form-control" placeholder="Ad" required></div>
+                    <div class="col"><input type="text" name="Soyad" class="form-control" placeholder="Soyad" required></div>
+                </div>
+                <input type="text" name="KullaniciAdi" class="form-control mb-3" placeholder="Kullanıcı Adı" required>
+                <input type="email" name="Eposta" class="form-control mb-3" placeholder="E-posta" required>
+                <input type="password" name="SifreInput" class="form-control mb-4" placeholder="Şifre" required>
+                <button type="submit" class="btn btn-primary w-100 shadow-sm">KAYDOL</button>
+                <a href="javascript:void(0)" onclick="switchSection('login-section')" class="d-block text-center small text-muted text-decoration-none mt-3">Geri Dön</a>
+            </form>
+        </div>
+
+        <div id="forgot-section" class="auth-section">
+            <h3 class="fw-bold text-center mb-3">Şifre Kurtarma</h3>
+            <p class="text-muted text-center small mb-4">Kayıtlı e-postanızı girin.</p>
+            <form id="forgotForm">
+                <input type="email" name="email" class="form-control mb-4" placeholder="E-posta adresiniz" required>
+                <button type="submit" class="btn btn-primary w-100 mb-3 shadow-sm">KOD GÖNDER</button>
+                <a href="javascript:void(0)" onclick="switchSection('login-section')" class="d-block text-center small text-muted text-decoration-none">Vazgeç</a>
+            </form>
+        </div>
+
+        <div id="verify-section" class="auth-section">
+            <div class="text-center">
+                <div class="verify-badge"><i class="bi bi-envelope-open-heart"></i></div>
+                <h3 class="fw-bold">Doğrulama</h3>
+                <p class="text-muted small px-3">
+                    Kodu <b id="targetEmail" class="text-primary text-break"></b> adresine yolladık.
+                </p>
+            </div>
+            <form id="resetForm">
+                <input type="text" name="inputCode" class="form-control mb-3 text-center fw-bold fs-4" style="letter-spacing: 6px;" placeholder="000000" maxlength="6" required>
+                <input type="password" name="newPassword" class="form-control mb-4" placeholder="Yeni Şifre" required>
+                <button type="submit" class="btn btn-primary w-100 shadow-sm" style="background:#10b981;">GÜNCELLE</button>
+            </form>
+        </div>
+
+        <div id="messageBox" class="alert text-center small shadow-sm"></div>
+
+    </div>
+</div>
+
+<script>
+    function switchSection(id) {
+        $("#messageBox").hide();
+        $(".auth-section.active").fadeOut(150, function() {
+            $(this).removeClass('active');
+            $("#" + id).fadeIn(150).addClass('active fade-anim');
+        });
+    }
+
+    function showMsg(msg, type = 'danger') {
+        const color = type === 'success' ? 'alert-success text-success' : 'alert-danger text-danger';
+        $("#messageBox").removeClass('alert-danger alert-success text-danger text-success').addClass(color).html(msg).fadeIn();
+        if(type === 'success') setTimeout(() => $("#messageBox").fadeOut(), 3000);
+    }
+
+    $(document).ready(function() {
+        // Giriş
+        $("#loginForm").submit(function(e) {
+            e.preventDefault();
+            $.post("/Account/Login", $(this).serialize(), function(r) {
+                if(r.success) window.location.href = r.redirectUrl;
+                else showMsg(r.message);
+            });
+        });
+
+        // Kayıt
+        $("#registerForm").submit(function(e) {
+            e.preventDefault();
+            $.post("/Account/Register", $(this).serialize(), function(r) {
+                if(r.success) { showMsg(r.message, 'success'); setTimeout(() => switchSection('login-section'), 2000); }
+                else showMsg(r.message);
+            });
+        });
+
+        // Şifremi Unuttum
+        $("#forgotForm").submit(function(e) {
+            e.preventDefault();
+            const btn = $(this).find('button');
+            btn.prop('disabled', true).text('Gönderiliyor...');
+            $.post("/Account/ForgotPassword", $(this).serialize(), function(r) {
+                if(r.success) {
+                    $("#targetEmail").text(r.email);
+                    switchSection('verify-section');
+                } else {
+                    showMsg(r.message);
+                }
+                btn.prop('disabled', false).text('KOD GÖNDER');
+            });
+        });
+
+        // Şifre Güncelleme
+        $("#resetForm").submit(function(e) {
+            e.preventDefault();
+            $.post("/Account/ResetPassword", $(this).serialize(), function(r) {
+                if(r.success) { showMsg(r.message, 'success'); setTimeout(() => switchSection('login-section'), 2000); }
+                else showMsg(r.message);
+            });
+        });
+    });
+</script>
+</body>
+</html>

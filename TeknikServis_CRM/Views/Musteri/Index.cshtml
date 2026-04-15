@@ -1,0 +1,230 @@
+﻿@model IEnumerable<TeknikServis_CRM.Models.Musteriler>
+@{
+    ViewData["Title"] = "Müşteri Yönetimi";
+}
+
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <div class="col-lg-12">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h5 class="fw-bold text-primary mb-0"><i class="bi bi-person-plus-fill me-2"></i>Yeni Müşteri Kaydı</h5>
+                    <p class="text-muted small mb-0">Lütfen tüm alanları eksiksiz doldurmaya özen gösterin.</p>
+                </div>
+                <div class="card-body p-4">
+                    <form id="musteriEkleForm">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label small fw-bold">Ad</label>
+                                <input type="text" name="Ad" class="form-control" placeholder="Ad" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label small fw-bold">Soyad</label>
+                                <input type="text" name="Soyad" class="form-control" placeholder="Soyad" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label small fw-bold">Telefon</label>
+                                <input type="tel" name="Telefon" class="form-control" placeholder="05xx xxx xx xx">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label small fw-bold">E-Posta</label>
+                                <input type="email" name="Eposta" class="form-control" placeholder="mail@ornek.com">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label small fw-bold">Şehir</label>
+                                <input type="text" name="Sehir" class="form-control" placeholder="Örn: İstanbul">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label small fw-bold">İlçe</label>
+                                <input type="text" name="Ilce" class="form-control" placeholder="Örn: Kadıköy">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label small fw-bold">Cari Bakiye (₺)</label>
+                                <input type="number" step="0.01" name="CariBakiye" class="form-control" value="0.00">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label small fw-bold">Açık Adres</label>
+                                <input type="text" name="Adres" class="form-control" placeholder="Mahalle, Sokak, No...">
+                            </div>
+                        </div>
+                        <div class="text-end mt-2">
+                            <button type="submit" class="btn btn-primary px-5 py-2 fw-bold rounded-3 shadow-sm" id="btnKaydet">
+                                <i class="bi bi-save me-2"></i>VERİTABANINA KAYDET
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">Müşteri Portföyü</h5>
+                    <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="loadMusteriler()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Tabloyu Yenile
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Müşteri Bilgileri</th>
+                                    <th>İletişim</th>
+                                    <th>Konum</th>
+                                    <th>Bakiye</th>
+                                    <th>Kayıt Tarihi</th>
+                                    <th class="text-end pe-4">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="musteriTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="tableLoader" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="fw-bold"><i class="bi bi-pencil-square me-2 text-primary"></i>Kayıt Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="musteriGuncelleForm">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="Id" id="editId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">Ad</label>
+                            <input type="text" name="Ad" id="editAd" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">Soyad</label>
+                            <input type="text" name="Soyad" id="editSoyad" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">Telefon</label>
+                            <input type="tel" name="Telefon" id="editTelefon" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">E-Posta</label>
+                            <input type="email" name="Eposta" id="editEposta" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label small fw-bold">Şehir</label>
+                            <input type="text" name="Sehir" id="editSehir" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label small fw-bold">İlçe</label>
+                            <input type="text" name="Ilce" id="editIlce" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label small fw-bold">Bakiye</label>
+                            <input type="number" step="0.01" name="CariBakiye" id="editCariBakiye" class="form-control">
+                        </div>
+                        <div class="col-md-12 mb-0">
+                            <label class="form-label small fw-bold">Adres</label>
+                            <textarea name="Adres" id="editAdres" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Kapat</button>
+                    <button type="submit" class="btn btn-primary px-4">Güncellemeyi Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            loadMusteriler();
+
+            $("#musteriEkleForm").submit(function (e) {
+                e.preventDefault();
+                $.post("/Musteri/Ekle", $(this).serialize(), function (r) {
+                    if (r.success) {
+                        $("#musteriEkleForm")[0].reset();
+                        loadMusteriler();
+                    } else { alert(r.message); }
+                });
+            });
+
+            $("#musteriGuncelleForm").submit(function (e) {
+                e.preventDefault();
+                $.post("/Musteri/Guncelle", $(this).serialize(), function (r) {
+                    if (r.success) {
+                        $("#editModal").modal("hide");
+                        loadMusteriler();
+                    } else { alert(r.message); }
+                });
+            });
+        });
+
+        function loadMusteriler() {
+            $("#tableLoader").show();
+            $.get("/Musteri/GetMusteriListesi", function (data) {
+                $("#tableLoader").hide();
+                $("#musteriTableBody").empty();
+                $.each(data, function (i, item) {
+                    let tarih = item.kayitTarihi ? new Date(item.kayitTarihi).toLocaleDateString('tr-TR') : '-';
+                    let bakiye = item.cariBakiye ? item.cariBakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺' : '0,00 ₺';
+                    
+                    let row = `
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark">${item.ad} ${item.soyad}</div>
+                                <div class="text-muted small" style="font-size:0.7rem;">ID: #${item.id}</div>
+                            </td>
+                            <td class="small">
+                                <div><i class="bi bi-telephone me-1"></i>${item.telefon || '-'}</div>
+                                <div class="text-muted">${item.eposta || '-'}</div>
+                            </td>
+                            <td class="small">
+                                <div>${item.sehir || '-'} / ${item.ilce || '-'}</div>
+                            </td>
+                            <td class="fw-bold text-primary small">${bakiye}</td>
+                            <td class="text-muted small">${tarih}</td>
+                            <td class="text-end pe-4">
+                                <button onclick="editMusteri(${item.id})" class="btn btn-sm btn-light border text-primary"><i class="bi bi-pencil-square"></i></button>
+                                <button onclick="deleteMusteri(${item.id})" class="btn btn-sm btn-light border text-danger"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>`;
+                    $("#musteriTableBody").append(row);
+                });
+            });
+        }
+
+        function editMusteri(id) {
+            $.get("/Musteri/GetMusteri", { id: id }, function (d) {
+                $("#editId").val(d.id);
+                $("#editAd").val(d.ad);
+                $("#editSoyad").val(d.soyad);
+                $("#editTelefon").val(d.telefon);
+                $("#editEposta").val(d.eposta);
+                $("#editSehir").val(d.sehir);
+                $("#editIlce").val(d.ilce);
+                $("#editCariBakiye").val(d.cariBakiye);
+                $("#editAdres").val(d.adres);
+                $("#editModal").modal("show");
+            });
+        }
+
+        function deleteMusteri(id) {
+            if (confirm("Kayıt kalıcı olarak silinecek. Onaylıyor musunuz?")) {
+                $.post("/Musteri/Sil", { id: id }, function (r) {
+                    if (r.success) loadMusteriler();
+                });
+            }
+        }
+    </script>
+}

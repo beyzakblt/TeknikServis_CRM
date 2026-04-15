@@ -1,0 +1,38 @@
+﻿@{
+    ViewData["Title"] = "Ana Sayfa";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center text-center">
+        <div class="col-md-8">
+            <div class="p-5 mb-4 bg-light rounded-3 shadow-sm border border-primary">
+                <div class="container-fluid py-5">
+                    <h1 class="display-5 fw-bold text-primary">Hoş Geldin, @ViewBag.UserFullName!</h1>
+                    <p class="col-md-12 fs-4 text-muted">
+                        CRM Teknik Servis sistemine başarıyla giriş yaptın.
+                        Sol menüden veya aşağıdaki butonlardan işlemlere başlayabilirsin.
+                    </p>
+                    <hr class="my-4">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="/Servis" class="btn btn-primary btn-lg px-4 me-md-2 fw-bold">
+                            <i class="bi bi-plus-circle me-2"></i>Yeni İş Emri Aç
+                        </a>
+                        <a href="/Musteri" class="btn btn-outline-secondary btn-lg px-4 fw-bold">
+                            Müşteri Listesi
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card bg-primary text-white border-0 rounded-4 shadow-sm">
+        <div class="card-body p-4">
+            <h4>Hoş geldin, <strong>@ViewBag.UserFullName</strong></h4>
+            <p class="mb-0 opacity-75">
+                <i class="bi bi-geo-alt"></i> Mevcut Konumunuz:
+                <strong>@ViewBag.District, @ViewBag.City</strong>
+            </p>
+        </div>
+    </div>
+</div>

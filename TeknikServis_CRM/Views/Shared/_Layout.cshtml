@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Teknik CRM Admin</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+            :root {
+                --sidebar-bg: #1e293b;
+                --sidebar-hover: #334155;
+                --primary-color: #3b82f6;
+            }
+
+            body {
+                font-family: 'Inter', sans-serif;
+                background-color: #f1f5f9;
+            }
+
+            /* Sidebar Stil */
+            #sidebar {
+                min-width: 260px;
+                max-width: 260px;
+                background: var(--sidebar-bg);
+                color: #fff;
+                transition: all 0.3s;
+                z-index: 999;
+            }
+
+                #sidebar.active {
+                    margin-left: -260px;
+                }
+
+            .sidebar-header {
+                padding: 1.5rem;
+                background: #0f172a;
+                font-weight: 700;
+                letter-spacing: 1px;
+            }
+
+            .nav-pills .nav-link {
+                color: #94a3b8;
+                padding: 0.8rem 1.5rem;
+                border-radius: 0;
+                font-size: 0.9rem;
+                border-left: 4px solid transparent;
+            }
+
+                .nav-pills .nav-link:hover {
+                    background: var(--sidebar-hover);
+                    color: #fff;
+                }
+
+                .nav-pills .nav-link.active {
+                    background: var(--sidebar-hover);
+                    color: #fff;
+                    border-left: 4px solid var(--primary-color);
+                }
+
+            /* Ana İçerik */
+            #content {
+                width: 100%;
+                min-height: 100vh;
+            }
+
+            .top-navbar {
+                background: #fff;
+                padding: 0.75rem 1.5rem;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .card {
+                border: none;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                border-radius: 0.75rem;
+            }
+
+            .footer {
+                padding: 1rem 1.5rem;
+                background: #fff;
+                border-top: 1px solid #e2e8f0;
+                font-size: 0.85rem;
+            }
+
+            .bi {
+                font-size: 1.1rem;
+                vertical-align: middle;
+                margin-right: 10px;
+            }
+    </style>
+</head>
+<body>
+
+    <div class="d-flex align-items-stretch">
+        <nav id="sidebar" class="shadow">
+            <div class="sidebar-header text-center">
+                <span class="text-primary"><i class="bi bi-cpu-fill"></i></span> TEKNİK<span class="text-primary">CRM</span>
+            </div>
+            
+            <div class="p-3 small text-uppercase text-muted fw-bold" style="font-size: 0.7rem;">Ana Menü</div>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="/Home/Index" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")"><i class="bi bi-grid-1x2-fill"></i> 1. Dashboard</a>
+                </li>
+                <li><a href="/Musteri/Index" class="nav-link"><i class="bi bi-people-fill"></i> 2. Müşteriler</a></li>
+                <li><a href="/Cihaz/Index" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Cihaz" ? "active" : "")"><i class="bi bi-pc-display"></i> 3. Cihazlar</a></li>
+                <li><a href="/Servis" class="nav-link"><i class="bi bi-tools"></i> 4. İş Emirleri</a></li>
+                <li><a href="/Takvim" class="nav-link"><i class="bi bi-calendar-event"></i> 5. Randevu & Takvim</a></li>
+                <li><a href="/Teknisyen" class="nav-link"><i class="bi bi-person-badge-fill"></i> 6. Teknisyen Takibi</a></li>
+                <li><a href="/Kasa" class="nav-link"><i class="bi bi-wallet2"></i> 7. Tahsilat & Finans</a></li>
+                <li><a href="/Bildirim" class="nav-link"><i class="bi bi-bell-fill"></i> 8. Bildirimler</a></li>
+                <li><a href="/Evrak" class="nav-link"><i class="bi bi-file-earmark-pdf-fill"></i> 9. Evrak & PDF</a></li>
+                <li><a href="/Rapor" class="nav-link"><i class="bi bi-bar-chart-line-fill"></i> 10. Raporlama</a></li>
+                
+                <div class="p-3 small text-uppercase text-muted fw-bold" style="font-size: 0.7rem;">Yönetim</div>
+                <li><a href="/Admin/Roller" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Roller" ? "active" : "")"><i class="bi bi-shield-lock-fill"></i> 11. Rol & Yetki</a></li>
+                <li><a href="/Ayarlar" class="nav-link"><i class="bi bi-gear-fill"></i> 12. Sistem Ayarları</a></li>
+            </ul>
+        </nav>
+
+        <div id="content" class="d-flex flex-column">
+            <nav class="navbar navbar-expand-lg top-navbar">
+                <div class="container-fluid p-0">
+                    <button type="button" id="sidebarCollapse" class="btn btn-light border">
+                        <i class="bi bi-text-indent-left"></i>
+                    </button>
+
+                    <div class="ms-auto d-flex align-items-center">
+                        <div class="dropdown">
+                            @{
+                                var fullName = Context.Session.GetString("FullName") ?? "Kullanıcı";
+                            }
+                            <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="https://ui-avatars.com/api/?name=@fullName&background=0D8ABC&color=fff&bold=true" alt="" width="32" height="32" class="rounded-circle me-2 border shadow-sm">
+                                <strong class="d-none d-sm-block">@fullName</strong>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3 py-2 rounded-3 animate slideIn">
+                                <li class="px-3 py-2 border-bottom mb-2">
+                                    <div class="small text-muted">Hoş geldiniz,</div>
+                                    <div class="fw-bold">@fullName</div>
+                                </li>
+                                <li><a class="dropdown-item py-2" href="/Home/Profil"><i class="bi bi-person-circle me-2 text-primary"></i>Profilim</a></li>
+                                <li><a class="dropdown-item py-2" href="/Ayarlar"><i class="bi bi-gear me-2 text-secondary"></i>Ayarlar</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item py-2 text-danger fw-bold" href="/Account/Logout"><i class="bi bi-box-arrow-right me-2"></i>Güvenli Çıkış</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-4 flex-grow-1">
+                @RenderBody()
+            </div>
+
+            <footer class="footer d-flex justify-content-between">
+                <div><strong>Teknik CRM</strong> &copy; 2026</div>
+                <div class="text-muted small">Tasarım & Yazılım: <strong>Beyza Akbulut</strong></div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Sidebar Toggle Fonksiyonu
+        $(document).ready(function () {
+        $('#sidebarCollapse').on('click', function () {
+        $('#sidebar').toggleClass('active');
+        // İkon değiştirme
+        $(this).find('i').toggleClass('bi-text-indent-left bi-text-indent-right');
+        });
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
