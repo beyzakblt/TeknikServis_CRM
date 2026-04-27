@@ -1,150 +1,158 @@
 ﻿@{
-    ViewData["Title"] = "Cihaz Portföy Yönetimi";
+    ViewData["Title"] = "Cihaz Yönetimi";
 }
 
-<style>
-    /* Profesyonel Tablo Koruması */
-    .device-table { table-layout: fixed; width: 100%; }
-    .col-info { width: 35%; }
-    .col-owner { width: 25%; }
-    .col-serial { width: 25%; }
-    .col-action { width: 15%; }
+<div class="container-fluid mt-4">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-6">
+            <h2 class="h3 mb-1 text-gray-800 fw-bold">
+                <i class="fas fa-microchip text-primary me-2"></i>Cihaz Envanteri
+            </h2>
+            <p class="text-muted mb-0 small text-uppercase fw-bold ls-1">Teknik Servis Varlık Takibi</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <button class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold" onclick="yeniCihazModal()">
+                <i class="fas fa-plus-circle me-1"></i> Yeni Cihaz Kaydı
+            </button>
+        </div>
+    </div>
 
-    /* Uzun notların tabloyu patlatmasını engeller */
-    .note-preview {
-        display: block;
-        max-width: 100%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-size: 0.75rem;
-        color: #6c757d;
-    }
-
-    .badge-marka {
-        background-color: #e0e7ff;
-        color: #4338ca;
-        font-weight: 600;
-        border: 1px solid #c7d2fe;
-    }
-</style>
-
-<div class="container-fluid py-4">
-    <div class="row g-4">
-        <div class="col-xl-4">
-            <div class="card border-0 shadow-sm rounded-4 position-sticky" style="top: 20px;">
-                <div class="card-header bg-white border-0 pt-4 px-4">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 me-3">
-                            <i class="bi bi-pc-display text-primary fs-4"></i>
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-primary border-4 shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1 small">Toplam Cihaz</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalDeviceCount">0</div>
                         </div>
-                        <div>
-                            <h5 class="fw-bold mb-0">Cihaz Kaydı</h5>
-                            <small class="text-muted">Teknik servis giriş formu</small>
+                        <div class="col-auto">
+                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
                         </div>
                     </div>
-                </div>
-                <div class="card-body p-4">
-                    <form id="cihazEkleForm">
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-uppercase text-muted">Müşteri Seçimi</label>
-                            <select name="MusteriId" id="MusteriId" class="form-select border-0 bg-light rounded-3 shadow-none" asp-items="ViewBag.Musteriler" required>
-                                <option value="">--- Müşteri Seçiniz ---</option>
-                            </select>
-                        </div>
-                        <div class="row g-3 mb-3">
-                            <div class="col-6">
-                                <label class="form-label small fw-bold text-uppercase text-muted">Marka</label>
-                                <input type="text" name="Marka" class="form-control border-0 bg-light rounded-3 shadow-none" placeholder="Örn: HP" required>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label small fw-bold text-uppercase text-muted">Model</label>
-                                <input type="text" name="Model" class="form-control border-0 bg-light rounded-3 shadow-none" placeholder="Örn: Victus" required>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-uppercase text-muted">Seri No / IMEI</label>
-                            <input type="text" name="SeriNo" class="form-control border-0 bg-light rounded-3 shadow-none" placeholder="S/N: 123456789">
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label small fw-bold text-uppercase text-muted">Cihaz Durum Notu</label>
-                            <textarea name="CihazNotu" class="form-control border-0 bg-light rounded-3 shadow-none" rows="4" placeholder="Cihazdaki fiziksel hasarlar veya kullanıcı şikayeti..."></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-3 shadow-sm transition-all">
-                            <i class="bi bi-cloud-arrow-up-fill me-2"></i>SİSTEME KAYDET
-                        </button>
-                    </form>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-8">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                    <h5 class="fw-bold mb-0"><i class="bi bi-list-ul me-2 text-primary"></i>Cihaz Portföyü</h5>
-                    <button onclick="loadCihazlar()" class="btn btn-light btn-sm rounded-pill px-3 border">
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </button>
-                </div>
-                <div class="card-body p-0 mt-3">
-                    <div class="table-responsive">
-                        <table class="table device-table table-hover align-middle mb-0">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th class="ps-4 py-3 col-info">Cihaz / Arıza Notu</th>
-                                    <th class="py-3 col-owner">Sahibi</th>
-                                    <th class="py-3 col-serial">Seri No</th>
-                                    <th class="text-end pe-4 py-3 col-action">İşlemler</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cihazTableBody"></tbody>
-                        </table>
-                        <div id="tableLoader" class="text-center py-5">
-                            <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+        <div class="col-xl-9 col-md-12 mb-4">
+            <div class="card shadow-sm border-0 h-100 py-1">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Müşteri Filtresi</label>
+                            <input type="text" id="filterMusteri" class="form-control form-control-sm rounded-pill" placeholder="Müşteri adıyla ara...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">Cihaz Tipi</label>
+                            <select id="filterCihazTip" class="form-select form-select-sm rounded-pill">
+                                <option value="">Tümü</option>
+                                @if (ViewBag.CihazTipleri != null)
+                                {
+                                    foreach (var item in (SelectList)ViewBag.CihazTipleri)
+                                    {
+                                        <option value="@item.Text">@item.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">Marka / Model</label>
+                            <input type="text" id="filterMarka" class="form-control form-control-sm rounded-pill" placeholder="Marka veya model...">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-outline-secondary btn-sm w-100 rounded-pill" onclick="filtreleriTemizle()">
+                                <i class="fas fa-undo me-1"></i> Temizle
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-dark">Envanter Listesi</h6>
+            <button class="btn btn-sm btn-light border text-primary rounded-circle" onclick="table.ajax.reload()">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="tblCihazlar" class="table table-hover align-middle w-100">
+                    <thead>
+                        <tr class="text-secondary bg-light">
+                            <th>MÜŞTERİ</th>
+                            <th>CİHAZ TİPİ</th>
+                            <th>MARKA / MODEL</th>
+                            <th>SERİ NO</th>
+                            <th class="text-center">İŞLEMLER</th>
+                        </tr>
+                    </thead>
+                    <tbody class="small"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="modal fade" id="editModal" tabindex="-1">
+<div class="modal fade" id="mdlCihaz" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-0 pt-4 px-4">
-                <h5 class="fw-bold mb-0">Cihaz Bilgilerini Güncelle</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white border-0 py-3">
+                <h5 class="modal-title fw-bold" id="modalBaslik">
+                    <i class="fas fa-edit me-2"></i>Cihaz Bilgileri
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form id="cihazGuncelleForm">
+            <form id="frmCihaz">
                 <div class="modal-body p-4">
-                    <input type="hidden" name="Id" id="editId">
+                    <input type="hidden" name="Id" id="txtId" value="0" />
+
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Müşteri</label>
-                        <select name="MusteriId" id="editMusteriId" class="form-select rounded-3 bg-light border-0" asp-items="ViewBag.Musteriler" required></select>
+                        <label class="form-label fw-bold text-dark small">Müşteri Seçimi</label>
+                        <select name="MusteriId" id="ddlMusteri" class="form-select" asp-items="ViewBag.Musteriler" required>
+                            <option value="">Seçiniz...</option>
+                        </select>
                     </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Marka</label>
-                            <input type="text" name="Marka" id="editMarka" class="form-control rounded-3 bg-light border-0" required>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small">Cihaz Tipi</label>
+                            <select name="CihazTipId" id="ddlCihazTip" class="form-select" asp-items="ViewBag.CihazTipleri" required>
+                                <option value="">Seçiniz...</option>
+                            </select>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Model</label>
-                            <input type="text" name="Model" id="editModel" class="form-control rounded-3 bg-light border-0" required>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small">Marka</label>
+                            <input type="text" name="Marka" id="txtMarka" class="form-control" placeholder="Örn: Daikin" required />
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Seri No</label>
-                        <input type="text" name="SeriNo" id="editSeriNo" class="form-control rounded-3 bg-light border-0">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small">Model</label>
+                            <input type="text" name="Model" id="txtModel" class="form-control" placeholder="Örn: Sensira" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small">Seri Numarası</label>
+                            <input type="text" name="SeriNo" id="txtSeriNo" class="form-control" placeholder="S/N: 123..." />
+                        </div>
                     </div>
+
                     <div class="mb-0">
-                        <label class="form-label small fw-bold">Cihaz Notu</label>
-                        <textarea name="CihazNotu" id="editCihazNotu" class="form-control rounded-3 bg-light border-0" rows="3"></textarea>
+                        <label class="form-label fw-bold text-dark small">Garanti Bitiş Tarihi</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="fas fa-calendar-alt text-muted"></i></span>
+                            <input type="date" name="GarantiBitisTarihi" id="txtGarantiTarihi" class="form-control" />
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pb-4 px-4">
-                    <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Vazgeç</button>
-                    <button type="submit" class="btn btn-primary rounded-3 px-4">Güncellemeyi Kaydet</button>
+                <div class="modal-footer bg-light border-0 py-3">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                        <i class="fas fa-save me-1"></i> Kaydet
+                    </button>
                 </div>
             </form>
         </div>
@@ -152,101 +160,167 @@
 </div>
 
 @section Scripts {
-<script>
-    $(document).ready(function () {
-        loadCihazlar();
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-        $("#cihazEkleForm").submit(function (e) {
-            e.preventDefault();
-            $.ajax({
-                url: "/Cihaz/Ekle",
-                type: "POST",
-                data: $(this).serialize(),
-                success: function (r) {
-                    if (r.success) {
-                        $("#cihazEkleForm")[0].reset();
-                        loadCihazlar();
-                    } else { alert(r.message); }
-                }
-            });
-        });
+    <script>
+        let table;
 
-        $("#cihazGuncelleForm").submit(function (e) {
-            e.preventDefault();
-            $.ajax({
-                url: "/Cihaz/Guncelle",
-                type: "POST",
-                data: $(this).serialize(),
-                success: function (r) {
-                    if (r.success) {
-                        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
-                        loadCihazlar();
-                    }
-                }
-            });
-        });
-    });
-
-    function loadCihazlar() {
-        $("#tableLoader").show();
-        $("#cihazTableBody").empty();
-        $.get("/Cihaz/GetCihazListesi", function (data) {
-            $("#tableLoader").hide();
-            $.each(data, function (i, item) {
-                let row = `
-                <tr>
-                    <td class="ps-4">
-                        <div class="d-flex flex-column">
-                            <div class="mb-1">
-                                <span class="badge badge-marka small">${item.marka}</span>
-                                <span class="fw-bold ms-1 text-dark">${item.model}</span>
-                            </div>
-                            <span class="note-preview" title="${item.cihazNotu || ''}">${item.cihazNotu || '-'}</span>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <div class="bg-secondary bg-opacity-10 p-1 rounded-circle me-2">
-                                <i class="bi bi-person-fill text-secondary" style="font-size: 0.8rem;"></i>
-                            </div>
-                            <span class="small fw-semibold">${item.musteriAd}</span>
-                        </div>
-                    </td>
-                    <td><code class="text-primary small fw-bold">${item.seriNo || 'YOK'}</code></td>
-                    <td class="text-end pe-4">
-                        <div class="btn-group shadow-sm rounded-3">
-                            <button onclick="editCihaz(${item.id})" class="btn btn-white btn-sm border-end" title="Düzenle">
-                                <i class="bi bi-pencil-square text-primary"></i>
-                            </button>
-                            <button onclick="deleteCihaz(${item.id})" class="btn btn-white btn-sm" title="Sil">
-                                <i class="bi bi-trash3 text-danger"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>`;
-                $("#cihazTableBody").append(row);
-            });
-        });
-    }
-
-    function editCihaz(id) {
-        $.get("/Cihaz/GetCihaz", { id: id }, function (d) {
-            if (d) {
-                $("#editId").val(d.id);
-                $("#editMusteriId").val(d.musteriId);
-                $("#editMarka").val(d.marka);
-                $("#editModel").val(d.model);
-                $("#editSeriNo").val(d.seriNo);
-                $("#editCihazNotu").val(d.cihazNotu);
-                new bootstrap.Modal(document.getElementById('editModal')).show();
-            }
-        });
-    }
-
-    function deleteCihaz(id) {
-        if (confirm("Kayıt silinecektir, onaylıyor musunuz?")) {
-            $.post("/Cihaz/Sil", { id: id }, function (r) { if (r.success) loadCihazlar(); });
+        $(document).ready(function () {
+        table = $('#tblCihazlar').DataTable({
+        "ajax": {
+        "url": "/Cihaz/GetCihazListesi",
+        "dataSrc": ""
+        },
+        "dom": '<"top"rt><"bottom"ip><"clear">', // Varsayılan arama kutusunu gizle, biz kendimizinkini yaptık
+        "initComplete": function(settings, json) {
+        $('#totalDeviceCount').text(json.length);
+        },
+        "columns": [
+        {
+        "data": "musteriAd",
+        "render": d => `<div class="fw-bold text-dark">${d}</div>`
+        },
+        {
+        "data": "cihazTipi",
+        "render": d => `<span class="badge rounded-pill bg-soft-info text-info border border-info px-3"> ${d}</span>`
+        },
+        {
+        "data": null,
+        "render": d => `<div>${d.marka}</div><small class="text-muted">${d.model || '-'}</small>`
+        },
+        {
+        "data": "seriNo",
+        "render": d => `<code class="text-dark fw-bold">${d || '-'}</code>`
+        },
+        {
+        "data": "id",
+        "orderable": false,
+        "className": "text-center",
+        "render": d => `
+        <div class="d-flex justify-content-center gap-2">
+        <button class="btn btn-sm btn-outline-warning rounded-circle action-btn" onclick="cihazDuzenle(${d})">
+        <i class="fas fa-pencil-alt"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger rounded-circle action-btn" onclick="cihazSil(${d})">
+        <i class="fas fa-trash-alt"></i>
+        </button>
+        </div>`
         }
-    }
-</script>
+        ],
+        "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/tr.json" }
+        });
+
+        // Özel Filtreleme Tetikleyicileri
+        $('#filterMusteri').on('keyup', function() { table.column(0).search(this.value).draw(); });
+        $('#filterCihazTip').on('change', function() { table.column(1).search(this.value).draw(); });
+        $('#filterMarka').on('keyup', function() { table.column(2).search(this.value).draw(); });
+        });
+
+        function filtreleriTemizle() {
+        $('#filterMusteri, #filterMarka').val('');
+        $('#filterCihazTip').val('');
+        table.columns().search('').draw();
+        }
+
+        // Form Gönderimi (AJAX)
+        $('#frmCihaz').submit(function (e) {
+        e.preventDefault();
+        $.post('/Cihaz/Kaydet', $(this).serialize(), function (res) {
+        if (res.success) {
+        $('#mdlCihaz').modal('hide');
+        table.ajax.reload();
+        Swal.fire({ icon: 'success', title: 'Başarılı!', text: res.message, timer: 1500, showConfirmButton: false });
+        } else {
+        Swal.fire('Hata!', res.message, 'error');
+        }
+        });
+        });
+
+        // Diğer Fonksiyonlar (Duzenle/Sil/Yeni)
+        function yeniCihazModal() {
+        $('#frmCihaz')[0].reset();
+        $('#txtId').val(0);
+        $('#modalBaslik').html('<i class="fas fa-plus-circle me-2"></i>Yeni Cihaz Kaydı');
+        $('#mdlCihaz').modal('show');
+        }
+
+        function cihazDuzenle(id) {
+        $.get('/Cihaz/GetCihaz/' + id, function (res) {
+        if (res) {
+        $('#txtId').val(res.id);
+        $('#ddlMusteri').val(res.musteriId);
+        $('#ddlCihazTip').val(res.cihazTipId);
+        $('#txtMarka').val(res.marka);
+        $('#txtModel').val(res.model);
+        $('#txtSeriNo').val(res.seriNo);
+        if(res.garantiBitisTarihi) $('#txtGarantiTarihi').val(res.garantiBitisTarihi.split('T')[0]);
+        $('#modalBaslik').html('<i class="fas fa-pencil-alt me-2"></i>Cihaz Düzenle');
+        $('#mdlCihaz').modal('show');
+        }
+        });
+        }
+
+        function cihazSil(id) {
+        Swal.fire({
+        title: 'Silmek istediğinize emin misiniz?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Evet, Sil',
+        cancelButtonText: 'Hayır'
+        }).then((result) => {
+        if (result.isConfirmed) {
+        $.post('/Cihaz/Sil/' + id, function (res) {
+        if (res.success) {
+        table.ajax.reload();
+        Swal.fire('Silindi!', '', 'success');
+        }
+        });
+        }
+        });
+        }
+    </script>
+
+    <style>
+        body {
+        background-color: #f8f9fc;
+        }
+
+        .ls-1 {
+        letter-spacing: 1px;
+        }
+
+        .bg-soft-info {
+        background-color: rgba(54, 185, 204, 0.1);
+        }
+
+        .action-btn {
+        width: 34px;
+        height: 34px;
+        transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+        transform: scale(1.1);
+        background-color: #4e73df;
+        color: white !important;
+        }
+
+        .table thead th {
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+        border: none;
+        }
+
+        .form-select-sm, .form-control-sm {
+        border: 1px solid #eaecf4;
+        }
+
+        .form-select:focus, .form-control:focus {
+        border-color: #4e73df;
+        box-shadow: none;
+        }
+    </style>
 }

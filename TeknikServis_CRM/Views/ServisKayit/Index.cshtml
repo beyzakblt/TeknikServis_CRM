@@ -1,0 +1,391 @@
+﻿@{
+    ViewData["Title"] = "Servis & İş Emri Paneli";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-6">
+            <h2 class="h3 mb-1 text-gray-800 font-weight-bold">
+                <i class="fas fa-tools text-primary me-2"></i>Servis & İş Emirleri
+            </h2>
+            <p class="text-muted mb-0 small fw-bold text-uppercase">Teknik Operasyon ve Ödeme Takibi</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <button class="btn btn-warning shadow-sm rounded-pill px-4 py-2 me-2 text-dark fw-bold" onclick="yaklasanOdemeleriGoster()">
+                <i class="fas fa-clock me-1"></i> Yaklaşan Ödemeler
+            </button>
+            <button class="btn btn-primary shadow-sm rounded-pill px-4 py-2" onclick="yeniServisModal()">
+                <i class="fas fa-plus-circle me-1"></i> Yeni Servis Kaydı
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-3 g-2">
+        <div class="col-md-10">
+            <div class="btn-group shadow-sm border rounded-pill bg-white p-1" role="group">
+                <button type="button" class="btn btn-sm rounded-pill px-3 active filter-btn" data-filter="">Tümü</button>
+                <button type="button" class="btn btn-sm rounded-pill px-3 filter-btn" data-filter="Yeni Atandı">Yeni Atandı</button>
+                <button type="button" class="btn btn-sm rounded-pill px-3 filter-btn" data-filter="İşlemde">İşlemde</button>
+                <button type="button" class="btn btn-sm rounded-pill px-3 filter-btn" data-filter="Parça Bekliyor">Parça Bekliyor</button>
+                <button type="button" class="btn btn-sm rounded-pill px-3 filter-btn" data-filter="Tamamlandı">Tamamlandı</button>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <select id="payFilter" class="form-select form-select-sm rounded-pill shadow-sm border-0 bg-white">
+                <option value="">Tüm Ödemeler</option>
+                <option value="Ödendi">Ödendi</option>
+                <option value="Bekliyor">Bekliyor</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table id="tblServisler" class="table table-hover align-middle w-100 border-0">
+                    <thead class="bg-light">
+                        <tr class="text-secondary small fw-bold">
+                            <th>Servis No</th>
+                            <th>Müşteri / Cihaz</th>
+                            <th>Ücret / Ödeme</th>
+                            <th>Ödeme Vadesi</th>
+                            <th>Durum</th>
+                            <th class="text-center" style="width:140px">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody class="small"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlServis" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white border-0 py-2">
+                <h5 class="modal-title fw-bold small" id="modalBaslik"><i class="fas fa-file-invoice me-2"></i>Servis & İş Emri Detayı</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <ul class="nav nav-tabs nav-justified bg-light" id="servisTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active small fw-bold" id="genel-tab" data-bs-toggle="tab" data-bs-target="#genel" type="button">
+                        <i class="fas fa-info-circle me-1"></i> GENEL BİLGİLER
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link small fw-bold text-danger" id="isemri-tab" data-bs-toggle="tab" data-bs-target="#isemri" type="button">
+                        <i class="fas fa-user-cog me-1"></i> TEKNİK İŞ EMRİ
+                    </button>
+                </li>
+            </ul>
+
+            <form id="frmServis">
+                <div class="modal-body p-4">
+                    <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade show active" id="genel" role="tabpanel">
+                            <input type="hidden" name="Id" id="txtId" value="0" />
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Müşteri</label>
+                                    <select name="MusteriId" id="ddlMusteri" class="form-select" required onchange="cihazlariGetir(this.value)">
+                                        <option value="">-- Müşteri Seçiniz --</option>
+                                        @foreach (var m in ViewBag.Musteriler)
+                                        {
+                                            <option value="@m.Id">@m.AdSoyad</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Cihaz</label>
+                                    <select name="MusteriCihazId" id="ddlCihaz" class="form-select">
+                                        <option value="">-- Cihaz Seçiniz --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small">Servis Durumu</label>
+                                    <select name="ServisDurumId" id="ddlDurum" class="form-select" required>
+                                        @foreach (var d in ViewBag.Durumlar)
+                                        {
+                                            <option value="@d.Id">@d.DurumAdi</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small text-primary">Ücret</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">₺</span>
+                                        <input type="number" name="Ucret" id="txtUcret" class="form-control" step="0.01" />
+                                        <select name="OdemeDurumu" id="txtOdemeDurumu" class="form-select">
+                                            <option value="Bekliyor">Bekliyor</option>
+                                            <option value="Ödendi">Ödendi</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small text-danger">Ödeme Vadesi</label>
+                                    <input type="date" name="VadeTarihi" id="txtVadeTarihi" class="form-control form-control-sm border-danger" />
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small">Arıza Açıklaması</label>
+                                    <textarea name="ArizaAciklamasi" id="txtAriza" class="form-control" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="isemri" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-primary">Sorumlu Teknisyen</label>
+                                    <select name="TeknisyenId" id="ddlTeknisyen" class="form-select border-primary">
+                                        <option value="">-- Teknisyen Atanmadı --</option>
+                                        @if (ViewBag.Teknisyenler != null)
+                                        {
+                                            foreach (var t in ViewBag.Teknisyenler)
+                                            {
+                                                <option value="@t.Id">@t.AdSoyad</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-primary">İş Emri Durumu</label>
+                                    <select name="Durum" id="txtIsEmriDurum" class="form-select border-primary">
+                                        <option value="Yeni Atandı">Yeni Atandı</option>
+                                        <option value="İşlemde">İşlemde</option>
+                                        <option value="Parça Bekliyor">Parça Bekliyor</option>
+                                        <option value="Tamamlandı">Tamamlandı</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-danger">Teknik Çalışma Notları</label>
+                                    <textarea name="TeknikNot" id="txtTeknikNot" class="form-control border-danger" rows="5"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0 py-3">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Vazgeç</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                        <i class="fas fa-save me-1"></i> Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlYaklasanOdemeler" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning py-2">
+                <h6 class="modal-title fw-bold"><i class="fas fa-exclamation-circle me-2"></i>Vadesi Yaklaşan Ödemeler</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="yaklasanListe" class="list-group list-group-flush"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        let table;
+
+        $(document).ready(function () {
+        table = $('#tblServisler').DataTable({
+        "ajax": { "url": "/ServisKayit/GetServisListesi", "dataSrc": "" },
+        "columns": [
+        { "data": "servisNo", "render": d => `<span class="fw-bold text-primary font-monospace">${d}</span>` },
+        { "data": null, "render": d => `<div>${d.musteriAd}</div><small class="text-muted italic">${d.cihazBilgi}</small>` },
+        { "data": null, "render": d => `<div><span class="fw-bold text-success">${d.ucret ? d.ucret.toLocaleString('tr-TR', {style:'currency', currency:'TRY'}) : '0,00 ₺'}</span></div><small class="badge ${d.odemeDurumu == 'Ödendi' ? 'bg-success' : 'bg-danger'}">${d.odemeDurumu}</small>` },
+        {
+        "data": "odemeTarihi",
+        "render": function(data) {
+        if(!data) return "-";
+        let vade = new Date(data);
+        let bugun = new Date(); bugun.setHours(0,0,0,0);
+        let color = vade < bugun ? "text-danger fw-bold" : "text-dark";
+        return `<span class="${color}"><i class="far fa-calendar-alt me-1"></i>${vade.toLocaleDateString('tr-TR')}</span>`;
+        }
+        },
+        {
+        "data": "durumAdi",
+        "render": function(d, t, r) {
+        // RENK EŞİTLEME MANTIĞI:
+        let badgeClass = "bg-primary"; // Varsayılan mavi
+
+        if (d === "Tamamlandı") badgeClass = "bg-success"; // Hepsi yeşil olacak
+        else if (d === "İşlemde") badgeClass = "bg-warning text-dark";
+        else if (d === "İptal") badgeClass = "bg-danger";
+        else if (d === "Yeni Atandı") badgeClass = "bg-info text-white";
+        else if (r.renkKodu) {
+        return `<span class="badge shadow-sm px-3 py-2 text-white" style="background-color:${r.renkKodu}">${d}</span>`;
+        }
+
+        return `<span class="badge shadow-sm px-3 py-2 text-white ${badgeClass}">${d}</span>`;
+        }
+        },
+        {
+        "data": "id",
+        "className": "text-center",
+        "render": d => `
+        <div class="d-flex justify-content-center gap-1">
+        <a href="/ServisKayit/ServisFisiIndir/${d}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-circle action-btn" title="PDF"><i class="fas fa-file-pdf"></i></a>
+        <button class="btn btn-sm btn-outline-info rounded-circle action-btn" onclick="teknikDetayAc(${d})" title="Teknik İş Emri"><i class="fas fa-user-cog"></i></button>
+        <button class="btn btn-sm btn-outline-warning rounded-circle action-btn" onclick="servisDuzenle(${d})" title="Düzenle"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-sm btn-outline-danger rounded-circle action-btn" onclick="servisSil(${d})" title="Sil"><i class="fas fa-trash"></i></button>
+        </div>`
+        }
+        ],
+        "order": [[0, "desc"]],
+        "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/tr.json" }
+        });
+
+        // Durum Buton Filtreleme
+        $('.filter-btn').on('click', function () {
+        $('.filter-btn').removeClass('btn-primary active').addClass('btn-light');
+        $(this).removeClass('btn-light').addClass('btn-primary active');
+        table.column(4).search($(this).data('filter')).draw();
+        });
+
+        // Ödeme Filtreleme
+        $('#payFilter').on('change', function () {
+        table.column(2).search(this.value).draw();
+        });
+
+        $('#frmServis').submit(function (e) {
+        e.preventDefault();
+        $.post('/ServisKayit/Kaydet', $(this).serialize(), function (res) {
+        if (res.success) {
+        $('#mdlServis').modal('hide');
+        table.ajax.reload();
+        Swal.fire({ icon: 'success', title: 'Başarılı', text: 'Kaydedildi', timer: 1500, showConfirmButton: false });
+        } else { Swal.fire('Hata', res.message, 'error'); }
+        });
+        });
+        });
+
+        function yaklasanOdemeleriGoster() {
+        $.get('/ServisKayit/GetYaklasanOdemeler', function (res) {
+        let div = $('#yaklasanListe').empty();
+        if (res.length === 0) div.append('<div class="p-3 text-center text-muted small">Yaklaşan ödeme bulunmuyor.</div>');
+        else res.forEach(o => { div.append(`<div class="list-group-item"><div class="d-flex w-100 justify-content-between"><h6 class="mb-1 fw-bold">${o.musteriAd}</h6><small class="text-danger fw-bold">${o.ucret} ₺</small></div><p class="mb-1 small">${o.servisNo} nolu servis.</p><small class="text-muted">Vade: ${o.tarih}</small></div>`); });
+        $('#mdlYaklasanOdemeler').modal('show');
+        });
+        }
+
+        function cihazlariGetir(mId, selectedCihazId = null) {
+        if (!mId) return;
+        $.get('/ServisKayit/GetMusteriCihazlari?musteriId=' + mId, function (res) {
+        let ddl = $('#ddlCihaz').empty().append('<option value="">-- Cihaz Seçiniz --</option>');
+        res.forEach(c => { ddl.append(`<option value="${c.id}">${c.ad}</option>`); });
+        if (selectedCihazId) ddl.val(selectedCihazId);
+        });
+        }
+
+        function yeniServisModal() {
+        $('#frmServis')[0].reset();
+        $('#txtId').val(0);
+        $('#ddlCihaz').empty().append('<option value="">-- Önce Müşteri Seçiniz --</option>');
+        $('#genel-tab').tab('show');
+        $('#modalBaslik').html('<i class="fas fa-plus-circle me-2 text-primary"></i>Yeni Servis Kaydı');
+        $('#mdlServis').modal('show');
+        }
+
+        function servisDuzenle(id) {
+        $.get('/ServisKayit/GetServis/' + id, function (res) {
+        if (res) {
+        $('#txtId').val(res.id);
+        $('#ddlMusteri').val(res.musteriId);
+        cihazlariGetir(res.musteriId, res.musteriCihazId);
+        $('#ddlDurum').val(res.servisDurumId);
+        $('#txtAriza').val(res.arizaAciklamasi);
+        $('#txtUcret').val(res.ucret);
+        $('#txtOdemeDurumu').val(res.odemeDurumu);
+        if(res.kapanisTarihi) $('#txtVadeTarihi').val(res.kapanisTarihi.split('T')[0]);
+
+        $.get('/ServisKayit/GetIsEmri?servisId=' + id, function (isRes) {
+        if (isRes) {
+        $('#ddlTeknisyen').val(isRes.teknisyenId);
+        $('#txtIsEmriDurum').val(isRes.durum);
+        $('#txtTeknikNot').val(isRes.teknikNot);
+        }
+        });
+        $('#modalBaslik').html('<i class="fas fa-edit me-2 text-warning"></i>Servis Düzenle');
+        $('#mdlServis').modal('show');
+        }
+        });
+        }
+
+        function teknikDetayAc(id) {
+        servisDuzenle(id);
+        setTimeout(() => { $('#isemri-tab').tab('show'); }, 400);
+        }
+
+        function servisSil(id) {
+        Swal.fire({ title: 'Silinsin mi?', text: "İşlem geri alınamaz!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Evet, Sil' }).then(r => {
+        if (r.isConfirmed) $.post('/ServisKayit/Sil/' + id, res => { table.ajax.reload(); Swal.fire('Silindi!', '', 'success'); });
+        });
+        }
+    </script>
+
+    <style>
+        .filter-btn {
+        font-size: 0.75rem !important;
+        border: none !important;
+        color: #6c757d;
+        }
+
+        .filter-btn.active {
+        background-color: #4e73df !important;
+        color: white !important;
+        box-shadow: 0 4px 6px rgba(78, 115, 223, 0.2) !important;
+        }
+
+        .dataTables_filter {
+        display: none;
+        }
+
+        .nav-tabs .nav-link {
+        color: #858796;
+        border: none;
+        padding: 12px;
+        }
+
+        .nav-tabs .nav-link.active {
+        color: #4e73df;
+        background: #fff;
+        border-bottom: 3px solid #4e73df;
+        }
+
+        .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s;
+        border-radius: 50%;
+        }
+
+        .action-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .form-select, .form-control {
+        border-radius: 10px;
+        border: 1px solid #ebedf2;
+        font-size: 0.85rem;
+        }
+    </style>
+}

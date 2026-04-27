@@ -1,148 +1,124 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿#nullable disable
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TeknikServis_CRM.Models;
-using TeknikServis_CRM.Helpers; // YetkiServis'e erişmek için
 using Microsoft.AspNetCore.Authorization;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace TeknikServis_CRM.Controllers
 {
-    [Authorize] // Sadece giriş yapmış kullanıcılar erişebilir
+    [Authorize]
     public class CihazController : Controller
     {
         private readonly CrmDbContext _context;
         public CihazController(CrmDbContext context) => _context = context;
 
-        // --- 1. LİSTELEME SAYFASI ---
-        [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var musteriler = _context.Musterilers
-                .Select(m => new
-                {
-                    id = m.Id,
-                    adSoyad = m.Ad + " " + m.Soyad
-                }).ToList();
+            var musteriler = await _context.Musterilers
+                .Where(m => m.SilindiMi == false)
+                .Select(m => new { id = m.Id, ad = m.AdSoyad })
+                .ToListAsync();
 
-            ViewBag.Musteriler = new SelectList(musteriler, "id", "adSoyad");
+            var tipler = await _context.CihazTipleris.ToListAsync();
+
+            ViewBag.Musteriler = new SelectList(musteriler, "id", "ad");
+            ViewBag.CihazTipleri = new SelectList(tipler, "Id", "TipAdi");
+
             return View();
         }
 
-        // --- 2. AJAX İLE LİSTE GETİR ---
         [HttpGet]
-        public async Task<IActionResult> GetCihazListesi()
+        public async Task<JsonResult> GetCihazListesi(int? musteriId, int? cihazTipId, string marka)
         {
-            var cihazlar = await _context.Cihazlars
-                .Join(_context.Musterilers,
-                    c => c.MusteriId,
-                    m => m.Id,
-                    (c, m) => new
-                    {
-                        id = c.Id,
-                        marka = c.Marka ?? "",
-                        model = c.Model ?? "",
-                        seriNo = c.SeriNo ?? "",
-                        cihazNotu = c.CihazNotu ?? "",
-                        musteriAd = m.Ad + " " + m.Soyad
-                    })
-                .OrderByDescending(x => x.id)
-                .ToListAsync();
+            // HATA BURADAYDI: Cihazlars yerine senin modeline uygun olan MusteriCihazlaris yapıldı.
+            var query = _context.MusteriCihazlaris
+                .Include(c => c.Musteri)
+                .Include(c => c.CihazTip)
+                .AsQueryable();
 
-            return Json(cihazlar);
-        }
+            // Filtre 1: Müşteriye göre
+            if (musteriId.HasValue)
+                query = query.Where(c => c.MusteriId == musteriId.Value);
 
-        // --- 3. TEK CİHAZ GETİR (DÜZENLEME İÇİN) ---
-        [HttpGet]
-        public async Task<IActionResult> GetCihaz(int id)
-        {
-            var c = await _context.Cihazlars.FindAsync(id);
-            if (c == null) return Json(null);
+            // Filtre 2: Cihaz Tipine göre
+            if (cihazTipId.HasValue)
+                query = query.Where(c => c.CihazTipId == cihazTipId.Value);
 
-            return Json(new
+            // Filtre 3: Markaya göre (İçerisinde geçiyorsa)
+            if (!string.IsNullOrEmpty(marka))
+                query = query.Where(c => c.Marka.Contains(marka));
+
+            var data = await query.Select(c => new
             {
-                id = c.Id,
-                marka = c.Marka,
-                model = c.Model,
-                seriNo = c.SeriNo,
-                cihazNotu = c.CihazNotu,
-                musteriId = c.MusteriId
-            });
+                c.Id,
+                MusteriAd = c.Musteri != null ? c.Musteri.AdSoyad : "Bilinmiyor",
+                CihazTipi = c.CihazTip != null ? c.CihazTip.TipAdi : "Belirtilmemiş",
+                c.Marka,
+                c.Model,
+                c.SeriNo
+            }).ToListAsync();
+
+            return Json(data);
         }
 
-        // --- 4. CİHAZ EKLE ---
         [HttpPost]
-        public async Task<IActionResult> Ekle(Cihazlar model)
+        public async Task<JsonResult> Kaydet(MusteriCihazlari cihazInput)
         {
-            // --- YETKİ KONTROLÜ ---
-            int userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-            if (!YetkiServis.YetkiKontrol(userId, "CIHAZ_YONETIM", "E", _context))
+            try
             {
-                return Json(new { success = false, message = "Cihaz ekleme yetkiniz bulunmuyor!" });
-            }
+                ModelState.Clear(); // Validasyon hatalarını temizle
 
-            // Form verilerini kontrol et
-            if (model.MusteriId == 0 && Request.Form.ContainsKey("MusteriId"))
-            {
-                model.MusteriId = int.Parse(Request.Form["MusteriId"]!);
-                model.Marka = Request.Form["Marka"];
-                model.Model = Request.Form["Model"];
-                model.SeriNo = Request.Form["SeriNo"];
-                model.CihazNotu = Request.Form["CihazNotu"];
-            }
+                if (cihazInput.Id == 0)
+                {
+                    cihazInput.KurulumTarihi = DateTime.Now;
+                    cihazInput.AktifMi = true;
+                    _context.MusteriCihazlaris.Add(cihazInput);
+                }
+                else
+                {
+                    var ent = await _context.MusteriCihazlaris.FindAsync(cihazInput.Id);
+                    if (ent == null) return Json(new { success = false, message = "Kayıt bulunamadı!" });
 
-            if (model.MusteriId > 0)
-            {
-                _context.Cihazlars.Add(model);
+                    ent.MusteriId = cihazInput.MusteriId;
+                    ent.CihazTipId = cihazInput.CihazTipId;
+                    ent.Marka = cihazInput.Marka;
+                    ent.Model = cihazInput.Model;
+                    ent.SeriNo = cihazInput.SeriNo;
+                }
+
                 await _context.SaveChangesAsync();
-                return Json(new { success = true });
+                return Json(new { success = true, message = "Cihaz başarıyla kaydedildi." });
             }
-            return Json(new { success = false, message = "Zorunlu alanları doldurunuz!" });
+            catch (Exception ex)
+            {
+                // SQL hatasını tam görmek için InnerException'ı döndürüyoruz
+                var detayHata = ex.InnerException?.Message ?? ex.Message;
+                return Json(new { success = false, message = "Hata: " + detayHata });
+            }
         }
 
-        // --- 5. CİHAZ GÜNCELLE ---
         [HttpPost]
-        public async Task<IActionResult> Guncelle(Cihazlar model)
+        public async Task<JsonResult> Sil(int id)
         {
-            // --- YETKİ KONTROLÜ ---
-            int userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-            if (!YetkiServis.YetkiKontrol(userId, "CIHAZ_YONETIM", "D", _context))
-            {
-                return Json(new { success = false, message = "Cihaz güncelleme yetkiniz bulunmuyor!" });
-            }
-
-            var c = await _context.Cihazlars.FindAsync(model.Id);
-            if (c == null) return Json(new { success = false, message = "Cihaz bulunamadı!" });
-
-            c.Marka = model.Marka;
-            c.Model = model.Model;
-            c.SeriNo = model.SeriNo;
-            c.CihazNotu = model.CihazNotu;
-            c.MusteriId = model.MusteriId;
-
-            await _context.SaveChangesAsync();
-            return Json(new { success = true });
-        }
-
-        // --- 6. CİHAZ SİL ---
-        [HttpPost]
-        public async Task<IActionResult> Sil(int id)
-        {
-            // --- YETKİ KONTROLÜ ---
-            int userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-            if (!YetkiServis.YetkiKontrol(userId, "CIHAZ_YONETIM", "S", _context))
-            {
-                return Json(new { success = false, message = "Bu cihazı silme yetkiniz bulunmuyor!" });
-            }
-
-            var c = await _context.Cihazlars.FindAsync(id);
+            var c = await _context.MusteriCihazlaris.FindAsync(id);
             if (c != null)
             {
-                _context.Cihazlars.Remove(c);
+                _context.MusteriCihazlaris.Remove(c);
                 await _context.SaveChangesAsync();
                 return Json(new { success = true });
             }
+            return Json(new { success = false });
+        }
 
-            return Json(new { success = false, message = "Cihaz bulunamadı!" });
+        [HttpGet]
+        public async Task<JsonResult> GetCihaz(int id)
+        {
+            var data = await _context.MusteriCihazlaris.FindAsync(id);
+            return Json(data);
         }
     }
 }

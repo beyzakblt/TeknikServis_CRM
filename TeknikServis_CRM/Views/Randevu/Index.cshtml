@@ -1,0 +1,271 @@
+﻿@model List<TeknikServis_CRM.Models.Randevular>
+@{
+    ViewData["Title"] = "Takvim ve Randevular";
+}
+
+<div class="container-fluid mt-4 px-md-4">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-6">
+            <h2 class="h3 mb-1 text-gray-800 font-weight-bold">
+                <i class="fas fa-calendar-alt text-primary me-2"></i>Randevu & Takvim
+            </h2>
+            <p class="text-muted mb-0 small text-uppercase fw-bold">Müşteri Görüşmeleri ve Teknik İş Planlaması</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <div class="btn-group shadow-sm rounded-pill p-1 bg-white border">
+                <button class="btn btn-sm btn-light rounded-pill px-3 active" onclick="takvimGorunumuDegistir('dayGridMonth')">Ay</button>
+                <button class="btn btn-sm btn-light rounded-pill px-3" onclick="takvimGorunumuDegistir('timeGridWeek')">Hafta</button>
+                <button class="btn btn-sm btn-light rounded-pill px-3" onclick="takvimGorunumuDegistir('listWeek')">Liste</button>
+            </div>
+            <button class="btn btn-primary shadow-sm rounded-pill px-4 ms-2" onclick="yeniRandevuModal()">
+                <i class="fas fa-plus me-1"></i> Yeni Randevu
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-12 d-flex gap-3 small fw-bold">
+            <div class="d-flex align-items-center"><span class="badge p-1 me-1" style="background:#f6c23e;">&nbsp;</span> İş Emirleri</div>
+            <div class="d-flex align-items-center"><span class="badge p-1 me-1" style="background:#4e73df;">&nbsp;</span> Bekleyen Randevu</div>
+            <div class="d-flex align-items-center"><span class="badge p-1 me-1" style="background:#1cc88a;">&nbsp;</span> Tamamlanan</div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdlRandevu" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white border-0 py-3">
+                <h5 class="modal-title fw-bold" id="modalBaslik"><i class="fas fa-calendar-plus me-2"></i>Randevu Kartı</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="frmRandevu">
+                <div class="modal-body p-4 bg-light">
+                    <input type="hidden" name="Id" id="txtId" value="0" />
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Müşteri Seçin</label>
+                        <select name="MusteriId" id="ddlMusteri" class="form-select">
+                            <option value="">-- Müşteri Seçiniz (Zorunlu Değil) --</option>
+                            @foreach (var m in ViewBag.Musteriler)
+                            {
+                                <option value="@m.Id">@m.AdSoyad</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Konu / Başlık</label>
+                        <input type="text" name="Baslik" id="txtBaslik" class="form-control" required placeholder="Örn: Cihaz Kurulumu..." />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Başlangıç</label>
+                            <input type="datetime-local" name="RandevuTarihi" id="txtBaslangic" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Bitiş</label>
+                            <input type="datetime-local" name="BitisTarihi" id="txtBitis" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Durum</label>
+                            <select name="Durum" id="txtDurum" class="form-select" onchange="renkGuncelle()">
+                                <option value="Bekliyor">Bekliyor</option>
+                                <option value="Tamamlandı">Tamamlandı</option>
+                                <option value="İptal">İptal</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Renk</label>
+                            <input type="color" name="RenkKodu" id="txtRenk" class="form-control form-control-color w-100" value="#4e73df" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Notlar</label>
+                        <textarea name="Aciklama" id="txtAciklama" class="form-control" rows="3"></textarea>
+                    </div>
+
+                </div>
+                <div class="modal-footer bg-white border-top py-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-danger rounded-pill px-4" id="btnSil" onclick="randevuSil()"><i class="fas fa-trash me-1"></i>Sil</button>
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 shadow-sm">Kaydet</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        let calendar;
+
+        $(document).ready(function () {
+        var calendarEl = document.getElementById('calendar');
+
+        calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: '' // Sağ tarafı manuel butonlarla yöneteceğiz
+        },
+        locale: 'tr',
+        buttonText: { today: 'Bugün' },
+        events: '/Randevu/GetRandevular',
+        editable: false,
+        selectable: true,
+        firstDay: 1, // Pazartesi başlasın
+
+        // Takvimde bir tarih tıklandığında (Yeni Kayıt)
+        select: function (info) {
+        yeniRandevuModal(info.startStr, info.endStr);
+        },
+
+        // Mevcut bir event tıklandığında (Düzenle)
+        eventClick: function (info) {
+        // Eğer bir İş Emriyse düzenleme yapılamasın (Servis sayfasından yapılmalı)
+        if (info.event.id.startsWith("IE_")) {
+        Swal.fire({
+        title: 'İş Emri Bilgisi',
+        text: 'İş emirleri üzerinde değişiklik yapmak için Servis & İş Emri panelini kullanın.',
+        icon: 'info'
+        });
+        } else {
+        // Sadece "R_" ile başlayan gerçek randevuları düzenle
+        let id = info.event.id.replace("R_", "");
+        randevuDuzenle(id);
+        }
+        },
+
+        // Event render edildiğinde stil verelim
+        eventDidMount: function(info) {
+        if (info.event.title.includes("[İŞ]")) {
+        info.el.style.borderLeft = "5px solid #000";
+        info.el.style.fontWeight = "bold";
+        }
+        // Tooltip ekleyelim
+        if (info.event.extendedProps.description) {
+        info.el.setAttribute('title', info.event.extendedProps.description);
+        }
+        }
+        });
+
+        calendar.render();
+
+        $('#frmRandevu').submit(function (e) {
+        e.preventDefault();
+        $.post('/Randevu/Kaydet', $(this).serialize(), function (res) {
+        if (res.success) {
+        $('#mdlRandevu').modal('hide');
+        calendar.refetchEvents();
+        Swal.fire({ icon: 'success', title: 'Başarılı', showConfirmButton: false, timer: 1500 });
+        } else { Swal.fire('Hata', res.message, 'error'); }
+        });
+        });
+        });
+
+        function takvimGorunumuDegistir(view) {
+        calendar.changeView(view);
+        // Buton aktiflik durumlarını yönet
+        $('.btn-group .btn').removeClass('active');
+        $(event.target).addClass('active');
+        }
+
+        function renkGuncelle() {
+        let durum = $('#txtDurum').val();
+        if (durum === 'Bekliyor') $('#txtRenk').val('#4e73df');
+        if (durum === 'Tamamlandı') $('#txtRenk').val('#1cc88a');
+        if (durum === 'İptal') $('#txtRenk').val('#e74a3b');
+        }
+
+        function yeniRandevuModal(baslangic = null, bitis = null) {
+        $('#frmRandevu')[0].reset();
+        $('#txtId').val(0);
+        if (baslangic) $('#txtBaslangic').val(baslangic.substring(0, 16));
+        if (bitis) $('#txtBitis').val(bitis.substring(0, 16));
+        $('#btnSil').hide();
+        $('#modalBaslik').html('<i class="fas fa-calendar-plus me-2"></i>Yeni Randevu');
+        renkGuncelle();
+        $('#mdlRandevu').modal('show');
+        }
+
+        function randevuDuzenle(id) {
+        $.get('/Randevu/GetRandevu/' + id, function (r) {
+        if (r) {
+        $('#txtId').val(r.id);
+        $('#ddlMusteri').val(r.musteriId);
+        $('#txtBaslik').val(r.baslik);
+        $('#txtAciklama').val(r.aciklama);
+        if(r.randevuTarihi) $('#txtBaslangic').val(r.randevuTarihi.substring(0, 16));
+        if(r.bitisTarihi) $('#txtBitis').val(r.bitisTarihi.substring(0, 16));
+        $('#txtDurum').val(r.durum);
+        $('#txtRenk').val(r.renkKodu);
+        $('#btnSil').show();
+        $('#modalBaslik').html('<i class="fas fa-edit me-2 text-warning"></i>Randevu Düzenle');
+        $('#mdlRandevu').modal('show');
+        }
+        });
+        }
+
+        function randevuSil() {
+        let id = $('#txtId').val();
+        Swal.fire({ title: 'Silinecek!', text: "Emin misiniz?", icon: 'warning', showCancelButton: true, confirmButtonText: 'Evet, Sil' }).then(r => {
+        if (r.isConfirmed) {
+        $.post('/Randevu/Sil/' + id, function(res) {
+        if (res.success) {
+        $('#mdlRandevu').modal('hide');
+        calendar.refetchEvents();
+        Swal.fire('Silindi', '', 'success');
+        }
+        });
+        }
+        });
+        }
+    </script>
+
+    <style>
+        #calendar {
+        min-height: 600px;
+        font-size: 0.9rem;
+        }
+
+        .fc-event {
+        cursor: pointer;
+        border: none;
+        padding: 2px 5px;
+        }
+
+        .fc-toolbar-title {
+        font-size: 1.25rem !important;
+        font-weight: bold;
+        text-transform: capitalize;
+        }
+
+        .form-control-color {
+        width: 100%;
+        height: 38px;
+        }
+
+        .fc-v-event {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+}

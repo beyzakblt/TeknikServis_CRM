@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TeknikServis_CRM.Models;
 
@@ -14,4 +15,8 @@ public partial class Randevular
     public DateTime? RandevuTarihi { get; set; }
 
     public string? Aciklama { get; set; }
+
+    // Sadece Müşteri adını çekmek için gereken standart ilişki
+    [ForeignKey("MusteriId")]
+    public virtual Musteriler? Musteri { get; set; }
 }

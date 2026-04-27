@@ -1,3 +1,4 @@
+#nullable disable
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
@@ -7,6 +8,9 @@ using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace TeknikServis_CRM.Controllers
 {
@@ -34,11 +38,24 @@ namespace TeknikServis_CRM.Controllers
         }
 
         // --- 1. DASHBOARD ---
+        // --- 1. DASHBOARD ---
         [HttpGet]
         public async Task<IActionResult> Index()
         {
             var fullName = HttpContext.Session.GetString("FullName");
             ViewBag.UserFullName = !string.IsNullOrEmpty(fullName) ? fullName : (User.Identity?.Name ?? "Kullanıcı");
+
+            var userIdStr = User.FindFirst("UserId")?.Value;
+            ViewBag.UserRole = "Yetkili";
+            if (int.TryParse(userIdStr, out int userId))
+            {
+                var rol = await _context.KullaniciRolleris
+                    .Where(kr => kr.KullaniciId == userId)
+                    .Join(_context.Rollers, kr => kr.RolId, r => r.Id, (kr, r) => r.RolAdi)
+                    .FirstOrDefaultAsync();
+
+                if (!string.IsNullOrEmpty(rol)) ViewBag.UserRole = rol;
+            }
 
             string clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
             if (clientIp == "::1" || clientIp == "127.0.0.1") clientIp = "176.234.224.120";
@@ -62,6 +79,56 @@ namespace TeknikServis_CRM.Controllers
 
             ViewBag.TotalCihaz = await _context.Cihazlars.CountAsync();
             ViewBag.TotalUsers = await _context.Kullanicilars.CountAsync(x => !x.SilindiMi);
+            ViewBag.ToplamMusteri = await _context.Musterilers.CountAsync(x => !x.SilindiMi);
+            ViewBag.AktifIsEmri = await _context.IsEmirleris.CountAsync(x => x.Durum != "Tamamlandı" && x.Durum != "İptal");
+
+            // =========================================================
+            // BUGÜNKÜ RANDEVULAR (JSON PAKETİNİ AÇMA İŞLEMİ)
+            // =========================================================
+            var bugun = DateTime.Today;
+            var bugunkuRandevularRaw = await _context.Randevulars
+                .Include(x => x.Musteri)
+                .Where(x => x.RandevuTarihi.HasValue && x.RandevuTarihi.Value.Date == bugun)
+                .OrderBy(x => x.RandevuTarihi)
+                .ToListAsync();
+
+            var randevuListesi = new List<dynamic>();
+            foreach (var r in bugunkuRandevularRaw)
+            {
+                string gercekBaslik = "Randevu"; // Varsayılan
+
+                // Gizli JSON paketini açıp içinden "Baslik" alanını çekiyoruz
+                if (!string.IsNullOrEmpty(r.Aciklama) && r.Aciklama.StartsWith("{"))
+                {
+                    try
+                    {
+                        using var doc = System.Text.Json.JsonDocument.Parse(r.Aciklama);
+                        if (doc.RootElement.TryGetProperty("Baslik", out var baslikProp))
+                        {
+                            gercekBaslik = baslikProp.GetString();
+                        }
+                    }
+                    catch { }
+                }
+
+                randevuListesi.Add(new
+                {
+                    Saat = r.RandevuTarihi?.ToString("HH:mm"),
+                    MusteriAd = r.Musteri?.AdSoyad ?? "Bilinmiyor",
+                    Konu = gercekBaslik,
+                    MusteriId = r.MusteriId
+                });
+            }
+
+            ViewBag.BugunRandevuSayisi = randevuListesi.Count;
+            ViewBag.BugunRandevuListesi = randevuListesi;
+
+            // SON 5 İŞ EMRİ
+            ViewBag.SonIsEmirleri = await _context.IsEmirleris
+                .Include(x => x.Musteri)
+                .OrderByDescending(x => x.Id)
+                .Take(5)
+                .ToListAsync();
 
             return View();
         }
@@ -70,7 +137,6 @@ namespace TeknikServis_CRM.Controllers
         [HttpGet]
         public async Task<IActionResult> Kullanicilar()
         {
-            // Veritabanındaki aktif rolleri ViewBag'e atıyoruz (Dinamik Liste)
             ViewBag.Roller = await _context.Rollers.Where(r => r.Durum == "Aktif").ToListAsync();
 
             var kullanicilar = await _context.Kullanicilars
@@ -122,7 +188,7 @@ namespace TeknikServis_CRM.Controllers
 
         // --- 4. KULLANICI KAYDET / GÜNCELLE ---
         [HttpPost]
-        public async Task<IActionResult> KullaniciKaydet(Kullanicilar model, string? SifreInput, int SecilenRolId)
+        public async Task<IActionResult> KullaniciKaydet(Kullanicilar model, string SifreInput, int SecilenRolId)
         {
             try
             {
@@ -138,7 +204,6 @@ namespace TeknikServis_CRM.Controllers
                     _context.Kullanicilars.Add(model);
                     await _context.SaveChangesAsync();
 
-                    // Seçilen rolü ilişkilendir
                     _context.KullaniciRolleris.Add(new KullaniciRolleri
                     {
                         KullaniciId = model.Id,
@@ -159,13 +224,11 @@ namespace TeknikServis_CRM.Controllers
                     user.Durum = model.Durum;
                     user.IsOnayli = model.IsOnayli;
 
-                    // Şifre kutusu doluysa güncelle
                     if (!string.IsNullOrEmpty(SifreInput) && SifreInput.Length < 32)
                     {
                         user.SifreHash = SifreleSHA256(SifreInput);
                     }
 
-                    // Mevcut rolü güncelle veya yeni ekle
                     var mevcutRol = await _context.KullaniciRolleris.FirstOrDefaultAsync(kr => kr.KullaniciId == user.Id);
                     if (mevcutRol != null)
                         mevcutRol.RolId = SecilenRolId;
@@ -221,7 +284,7 @@ namespace TeknikServis_CRM.Controllers
 
         // --- 7. PROFİL GÜNCELLE ---
         [HttpPost]
-        public async Task<IActionResult> ProfilGuncelle(Kullanicilar model, string? YeniSifre)
+        public async Task<IActionResult> ProfilGuncelle(Kullanicilar model, string YeniSifre)
         {
             var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
             var user = await _context.Kullanicilars.FindAsync(userId);
@@ -250,5 +313,73 @@ namespace TeknikServis_CRM.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+        [HttpGet]
+        public async Task<JsonResult> GetNotifications()
+        {
+            var bugun = DateTime.Today;
+            var ucGunSonra = bugun.AddDays(3);
+
+            // 1. Ödemesi Yaklaşanlar (KapanisTarihi'ni vade olarak kullanıyoruz)
+            var odemeler = await _context.ServisKayitlaris
+                .Include(x => x.Musteri)
+                .Where(x => x.OdemeDurumu == "Bekliyor" && x.KapanisTarihi >= bugun && x.KapanisTarihi <= ucGunSonra)
+                .OrderBy(x => x.KapanisTarihi)
+                .Select(s => new {
+                    Baslik = "Ödeme Yaklaştı",
+                    Detay = s.Musteri.AdSoyad + " (" + s.ServisNo + ")",
+                    Tip = "payment",
+                    Tarih = s.KapanisTarihi.Value.ToString("dd.MM")
+                })
+                .ToListAsync();
+
+            // 2. Yeni Atanan İş Emirleri
+            var servisler = await _context.IsEmirleris
+                .Where(x => x.Durum == "Yeni Atandı")
+                .OrderByDescending(x => x.OlusturmaTarihi)
+                .Select(s => new {
+                    Baslik = "Yeni İş Emri",
+                    Detay = "Atanmış bekleyen iş emri mevcut.",
+                    Tip = "service",
+                    Tarih = s.OlusturmaTarihi.Value.ToString("HH:mm")
+                })
+                .ToListAsync();
+
+            var items = odemeler.Concat(servisler).ToList();
+
+            return Json(new
+            {
+                count = items.Count,
+                items = items.Take(10) // Son 10 bildirim 
+            });
+        }
+        [HttpGet]
+        public async Task<IActionResult> PersonelIsYuku(int id)
+        {
+            // Verilen kullanıcı ID'sine (TeknisyenId) atanmış olan iş emirlerini getiriyoruz
+            var isYuku = await _context.IsEmirleris
+                .Where(ie => ie.TeknisyenId == id)
+                .Include(ie => ie.Musteri)
+                .Select(ie => new {
+                    ie.Id,
+                    MusteriAd = ie.Musteri.AdSoyad,
+                    ie.ArizaAciklamasi,
+                    ie.Durum,
+                    Tarih = ie.OlusturmaTarihi.HasValue ? ie.OlusturmaTarihi.Value.ToString("dd.MM.yyyy HH:mm") : "-",
+                    ServisUcreti = ie.ServisUcreti ?? 0
+                })
+                .OrderByDescending(ie => ie.Id)
+                .ToListAsync();
+
+            return Json(isYuku);
+        }
+    }
+
+    // IP-API Servisi için sınıf
+    public class IpLocationResult
+    {
+        public string status { get; set; }
+        public string city { get; set; }
+        public string regionName { get; set; }
+        public string country { get; set; }
     }
 }

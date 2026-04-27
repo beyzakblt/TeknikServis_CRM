@@ -24,31 +24,21 @@ namespace TeknikServis_CRM.Controllers
         [HttpGet]
         public IActionResult Index() => View();
 
-        // --- 1. OTURUM BİLGİSİ GÜNCELLEME ---
+        // --- 1. OTURUM BİLGİSİ GÜNCELLEME (HIZLANDIRILDI) ---
         private async Task GirisBilgilendirme(int kullaniciId)
         {
+            // Cihaz tespiti
             string userAgent = Request.Headers["User-Agent"].ToString();
             string cihazTipi = userAgent.Contains("Android") ? "Android" :
                                userAgent.Contains("iPhone") ? "iPhone" :
                                userAgent.Contains("Macintosh") ? "MacBook" : "Windows PC";
 
+            // IP Tespiti
             string ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
-            if (ip == "::1" || ip == "127.0.0.1") ip = "176.234.224.120"; // Test IP
 
-            string konumInfo = "Bilinmiyor";
-            try
-            {
-                var client = _httpClientFactory.CreateClient();
-                var response = await client.GetFromJsonAsync<IpLocationResult>($"http://ip-api.com/json/{ip}?fields=status,city,country");
+            // Performans için dış API (ip-api) kaldırıldı, sadece IP ve Cihaz bilgisi tutuluyor
+            string fullIpInfo = $"{ip} | {cihazTipi}";
 
-                if (response != null && response.status == "success")
-                {
-                    konumInfo = $"{response.city ?? "Bilinmiyor"}, {response.country ?? "Bilinmiyor"}";
-                }
-            }
-            catch { }
-
-            string fullIpInfo = $"{ip} | {cihazTipi} ({konumInfo})";
             var mevcutOturum = await _context.KullaniciOturumlaris.FirstOrDefaultAsync(x => x.KullaniciId == kullaniciId);
 
             if (mevcutOturum != null)
@@ -70,17 +60,17 @@ namespace TeknikServis_CRM.Controllers
                     IpAdresi = fullIpInfo
                 });
             }
-            await _context.SaveChangesAsync();
+            // Not: SaveChanges Login metodunda toplu yapılacak, burada await çağırmıyoruz.
         }
 
-        // --- 2. GİRİŞ YAPMA (HomeController'dan SHA256 Çağrıldı) ---
+        // --- 2. GİRİŞ YAPMA ---
         [HttpPost]
         public async Task<IActionResult> Login(string kullaniciAdi, string sifre, bool beniHatirla)
         {
-            // İSTEDİĞİN GÜNCELLEME: Merkezi metot kullanımı
             string hash = HomeController.SifreleSHA256(sifre);
 
-            var user = await _context.Kullanicilars.FirstOrDefaultAsync(u => u.KullaniciAdi == kullaniciAdi && u.SifreHash == hash && !u.SilindiMi);
+            var user = await _context.Kullanicilars
+                .FirstOrDefaultAsync(u => u.KullaniciAdi == kullaniciAdi && u.SifreHash == hash && !u.SilindiMi);
 
             if (user != null)
             {
@@ -102,12 +92,17 @@ namespace TeknikServis_CRM.Controllers
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var authProps = new AuthenticationProperties { IsPersistent = beniHatirla };
+
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProps);
 
+                // Bilgilendirme kaydını hazırla
                 await GirisBilgilendirme(user.Id);
 
+                // Son giriş tarihini güncelle
                 user.SonGirisTarihi = DateTime.Now;
                 _context.Kullanicilars.Update(user);
+
+                // Tüm veritabanı değişikliklerini tek seferde kaydet (Performans için kritik)
                 await _context.SaveChangesAsync();
 
                 HttpContext.Session.SetString("FullName", user.Ad + " " + user.Soyad);
@@ -126,14 +121,13 @@ namespace TeknikServis_CRM.Controllers
             return RedirectToAction("Index", "Account");
         }
 
-        // --- 4. KAYIT OLMA (HomeController'dan SHA256 Çağrıldı) ---
+        // --- 4. KAYIT OLMA ---
         [HttpPost]
         public async Task<IActionResult> Register(Kullanicilar model, string SifreInput)
         {
             if (await _context.Kullanicilars.AnyAsync(u => u.KullaniciAdi == model.KullaniciAdi || u.Eposta == model.Eposta))
                 return Json(new { success = false, message = "Bu bilgiler zaten kullanımda!" });
 
-            // Merkezi metot kullanımı
             model.SifreHash = HomeController.SifreleSHA256(SifreInput);
             model.Durum = "Aktif";
             model.OlusturmaTarihi = DateTime.Now;
@@ -156,11 +150,11 @@ namespace TeknikServis_CRM.Controllers
             TempData["ResetCode"] = code;
             TempData["ResetEmail"] = email;
 
-            bool mailSent = MailGonderKod(email, code, "Güvenlik Onay Kodu");
+            bool mailSent = await MailGonderKodAsync(email, code, "Güvenlik Onay Kodu");
             return mailSent ? Json(new { success = true, email = email }) : Json(new { success = false, message = "Mail hatası!" });
         }
 
-        // --- 6. ŞİFRE SIFIRLAMA (HomeController'dan SHA256 Çağrıldı) ---
+        // --- 6. ŞİFRE SIFIRLAMA ---
         [HttpPost]
         public async Task<IActionResult> ResetPassword(string inputCode, string newPassword)
         {
@@ -172,7 +166,6 @@ namespace TeknikServis_CRM.Controllers
                 var user = await _context.Kullanicilars.FirstOrDefaultAsync(u => u.Eposta == email);
                 if (user != null)
                 {
-                    // Merkezi metot kullanımı
                     user.SifreHash = HomeController.SifreleSHA256(newPassword);
                     _context.Kullanicilars.Update(user);
                     await _context.SaveChangesAsync();
@@ -185,22 +178,30 @@ namespace TeknikServis_CRM.Controllers
         [HttpGet]
         public IActionResult AccessDenied() => View();
 
-        private bool MailGonderKod(string aliciEmail, string kod, string konu)
+        // --- 7. MAİL GÖNDERME (TAM ASENKRON) ---
+        private async Task<bool> MailGonderKodAsync(string aliciEmail, string kod, string konu)
         {
             try
             {
                 var senderEmail = "beyzakblt@gmail.com";
                 var appPassword = "eqvmlqjbubnmhdok";
                 string htmlBody = $"<div style='padding:20px; border:1px solid #eee;'><h2>Kodunuz: {kod}</h2></div>";
-                using var smtp = new SmtpClient("smtp.gmail.com") { Port = 587, Credentials = new NetworkCredential(senderEmail, appPassword), EnableSsl = true };
+
+                using var smtp = new SmtpClient("smtp.gmail.com")
+                {
+                    Port = 587,
+                    Credentials = new NetworkCredential(senderEmail, appPassword),
+                    EnableSsl = true
+                };
+
                 var mail = new MailMessage(senderEmail, aliciEmail, konu, htmlBody) { IsBodyHtml = true };
-                smtp.Send(mail);
+                await smtp.SendMailAsync(mail); // Await kullanımı sayesinde UI donmaz
                 return true;
             }
             catch { return false; }
         }
 
-        // --- İLK ADMİN OLUŞTURMA (HomeController'dan SHA256 Çağrıldı) ---
+        // --- 8. İLK ADMİN OLUŞTURMA ---
         [HttpGet]
         public async Task<IActionResult> IlkKodum()
         {

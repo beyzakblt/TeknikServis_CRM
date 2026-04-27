@@ -1,22 +1,46 @@
 ﻿@model List<TeknikServis_CRM.Models.KullaniciListeViewModel>
 @{
     ViewData["Title"] = "Kullanıcı Yönetimi";
-    // Controller'dan gelen dinamik rol listesi
     var rollerListesi = ViewBag.Roller as List<TeknikServis_CRM.Models.Roller> ?? new List<Roller>();
 }
 
 <style>
     .avatar-circle {
-        width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
-        font-weight: 700; font-size: 0.85rem; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
+
     .user-table thead th {
-        background-color: #f8f9fa; border: none; font-weight: 700; color: #495057;
-        font-size: 0.75rem; letter-spacing: 0.5px;
+        background-color: #f8f9fa;
+        border: none;
+        font-weight: 700;
+        color: #495057;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
     }
-    .badge-soft { padding: 0.4em 0.8em; font-weight: 600; border-radius: 8px; }
-    .form-control:focus, .form-select:focus { border-color: #0d6efd; box-shadow: none; background-color: #fff !important; }
-    .input-group-text { cursor: pointer; }
+
+    .badge-soft {
+        padding: 0.4em 0.8em;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: none;
+        background-color: #fff !important;
+    }
+
+    .input-group-text {
+        cursor: pointer;
+    }
 </style>
 
 <div class="container-fluid py-4">
@@ -120,6 +144,9 @@
                                 <td class="text-muted small">@(item.SonGiris.HasValue ? item.SonGiris.Value.ToString("dd.MM.yyyy HH:mm") : "Hiç Giriş Yapılmadı")</td>
                                 <td class="text-end pe-4">
                                     <div class="btn-group shadow-sm border rounded-pill bg-white px-2">
+                                        <button onclick="viewIsYuku(@item.Id, '@item.Ad @item.Soyad')" class="btn btn-sm border-0 text-success" title="İş Yükünü Gör">
+                                            <i class="bi bi-briefcase-fill"></i>
+                                        </button>
                                         <button onclick="editKullanici(@item.Id)" class="btn btn-sm border-0 text-primary"><i class="bi bi-pencil-fill"></i></button>
                                         <button onclick="deleteKullanici(@item.Id)" class="btn btn-sm border-0 text-danger"><i class="bi bi-trash3-fill"></i></button>
                                     </div>
@@ -149,7 +176,7 @@
                         <div class="col-md-6"><label class="form-label small fw-bold">Kullanıcı Adı</label><input type="text" name="KullaniciAdi" id="kKullaniciAdi" class="form-control rounded-3 border-0 bg-light px-3 py-2" required></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">E-Posta</label><input type="email" name="Eposta" id="kEposta" class="form-control rounded-3 border-0 bg-light px-3 py-2" required></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Telefon</label><input type="text" name="Telefon" id="kTelefon" class="form-control rounded-3 border-0 bg-light px-3 py-2"></div>
-                        
+
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Yetki Rolü</label>
                             <select name="SecilenRolId" id="kRol" class="form-select rounded-3 border-0 bg-light px-3 py-2" required>
@@ -206,95 +233,161 @@
     </div>
 </div>
 
+<div class="modal fade" id="isYukuModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pt-4 px-4 bg-light rounded-top-4">
+                <div>
+                    <h5 class="fw-bold mb-0">Personel Görev Takibi</h5>
+                    <small class="text-muted" id="isYukuPersonelAd"></small>
+                </div>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Müşteri</th>
+                                <th>Açıklama</th>
+                                <th>Atanma Tarihi</th>
+                                <th>Durum</th>
+                                <th class="text-end">Ücret</th>
+                            </tr>
+                        </thead>
+                        <tbody id="isYukuTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="noIsYukuAlert" class="text-center py-5 d-none">
+                    <i class="bi bi-check2-circle display-4 text-success"></i>
+                    <p class="mt-3 fw-bold">Bu personele atanmış aktif bir görev bulunamadı.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function togglePassword(id) {
-            const input = $("#" + id);
-            const icon = $("#" + id + "Icon");
-            if (input.attr("type") === "password") {
-                input.attr("type", "text");
-                icon.removeClass("bi-eye-fill").addClass("bi-eye-slash-fill");
-            } else {
-                input.attr("type", "password");
-                icon.removeClass("bi-eye-slash-fill").addClass("bi-eye-fill");
-            }
+        const input = $("#" + id);
+        const icon = $("#" + id + "Icon");
+        if (input.attr("type") === "password") {
+        input.attr("type", "text");
+        icon.removeClass("bi-eye-fill").addClass("bi-eye-slash-fill");
+        } else {
+        input.attr("type", "password");
+        icon.removeClass("bi-eye-slash-fill").addClass("bi-eye-fill");
+        }
         }
 
         function loadKullanicilar() {
-            let ara = $("#txtAra").val().toLowerCase();
-            let durum = $("#filterDurum").val();
-            let rol = $("#filterRol").val();
-            $("#kullaniciTableBody tr").each(function () {
-                let satir = $(this);
-                let metin = satir.text().toLowerCase();
-                let metinUygun = metin.indexOf(ara) > -1;
-                let durumUygun = durum === "" || satir.data("durum") === durum;
-                let rolUygun = rol === "" || satir.data("rol") === rol;
-                if (metinUygun && durumUygun && rolUygun) satir.fadeIn(200); else satir.fadeOut(200);
-            });
+        let ara = $("#txtAra").val().toLowerCase();
+        let durum = $("#filterDurum").val();
+        let rol = $("#filterRol").val();
+        $("#kullaniciTableBody tr").each(function () {
+        let satir = $(this);
+        let metin = satir.text().toLowerCase();
+        let metinUygun = metin.indexOf(ara) > -1;
+        let durumUygun = durum === "" || satir.data("durum") === durum;
+        let rolUygun = rol === "" || satir.data("rol") === rol;
+        if (metinUygun && durumUygun && rolUygun) satir.fadeIn(200); else satir.fadeOut(200);
+        });
         }
 
         $("#txtAra").on("keyup", loadKullanicilar);
         $("#filterDurum, #filterRol").on("change", loadKullanicilar);
 
         function yeniKullaniciModal() {
-            $("#kullaniciForm")[0].reset();
-            $("#kId").val(0);
-            $("#modalBaslik").text("Yeni Kullanıcı Tanımla");
-            $("#kSifre, #kSifreTekrar").attr("required", true);
-            $("#kullaniciModal").modal("show");
+        $("#kullaniciForm")[0].reset();
+        $("#kId").val(0);
+        $("#modalBaslik").text("Yeni Kullanıcı Tanımla");
+        $("#kSifre, #kSifreTekrar").attr("required", true);
+        $("#kullaniciModal").modal("show");
         }
 
         function editKullanici(id) {
-            $("#kullaniciForm")[0].reset();
-            $("#kSifre, #kSifreTekrar").attr("required", false);
-            $.get("/Home/KullaniciDetay/" + id, function (data) {
-                if (data) {
-                    $("#kId").val(data.id);
-                    $("#kAd").val(data.ad);
-                    $("#kSoyad").val(data.soyad);
-                    $("#kKullaniciAdi").val(data.kullaniciAdi);
-                    $("#kEposta").val(data.eposta);
-                    $("#kTelefon").val(data.telefon);
-                    $("#kDurum").val(data.durum);
-                    $("#kIsOnayli").prop("checked", data.isOnayli);
-                    $("#kRol").val(data.rolId);
-                    $("#modalBaslik").text("Kullanıcı Düzenle");
-                    $("#kullaniciModal").modal("show");
-                }
-            });
+        $("#kullaniciForm")[0].reset();
+        $("#kSifre, #kSifreTekrar").attr("required", false);
+        $.get("/Home/KullaniciDetay/" + id, function (data) {
+        if (data) {
+        $("#kId").val(data.id);
+        $("#kAd").val(data.ad);
+        $("#kSoyad").val(data.soyad);
+        $("#kKullaniciAdi").val(data.kullaniciAdi);
+        $("#kEposta").val(data.eposta);
+        $("#kTelefon").val(data.telefon);
+        $("#kDurum").val(data.durum);
+        $("#kIsOnayli").prop("checked", data.isOnayli);
+        $("#kRol").val(data.rolId);
+        $("#modalBaslik").text("Kullanıcı Düzenle");
+        $("#kullaniciModal").modal("show");
+        }
+        });
+        }
+
+        function viewIsYuku(id, adSoyad) {
+        $("#isYukuPersonelAd").text(adSoyad + " isimli personelin aktif görevleri listeleniyor.");
+        $("#isYukuTableBody").empty();
+        $("#noIsYukuAlert").addClass("d-none");
+
+        $.get("/Home/PersonelIsYuku/" + id, function (data) {
+        if (data && data.length > 0) {
+        data.forEach(item => {
+        let badgeColor = "bg-primary";
+        if(item.durum === "Tamamlandı") badgeColor = "bg-success";
+        if(item.durum === "İptal") badgeColor = "bg-danger";
+        if(item.durum === "İşlemde") badgeColor = "bg-warning text-dark";
+
+        let row = `
+        <tr>
+        <td class="fw-bold">${item.musteriAd}</td>
+        <td class="small text-wrap" style="max-width:300px;">${item.arizaAciklamasi || '-'}</td>
+        <td class="small">${item.tarih}</td>
+        <td><span class="badge ${badgeColor}">${item.durum}</span></td>
+        <td class="text-end fw-bold">${item.servisUcreti.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
+        </tr>
+        `;
+        $("#isYukuTableBody").append(row);
+        });
+        } else {
+        $("#noIsYukuAlert").removeClass("d-none");
+        }
+        $("#isYukuModal").modal("show");
+        });
         }
 
         $("#kullaniciForm").submit(function (e) {
-            e.preventDefault();
-            if ($("#kSifre").val() !== $("#kSifreTekrar").val()) {
-                Swal.fire('Hata', 'Şifreler eşleşmiyor!', 'error');
-                return;
-            }
-            $.post("/Home/KullaniciKaydet", $(this).serialize(), function (r) {
-                if (r.success) {
-                    Swal.fire('Başarılı', 'İşlem tamamlandı.', 'success').then(() => location.reload());
-                } else {
-                    Swal.fire('Hata', r.message, 'error');
-                }
-            });
+        e.preventDefault();
+        if ($("#kSifre").val() !== $("#kSifreTekrar").val()) {
+        Swal.fire('Hata', 'Şifreler eşleşmiyor!', 'error');
+        return;
+        }
+        $.post("/Home/KullaniciKaydet", $(this).serialize(), function (r) {
+        if (r.success) {
+        Swal.fire('Başarılı', 'İşlem tamamlandı.', 'success').then(() => location.reload());
+        } else {
+        Swal.fire('Hata', r.message, 'error');
+        }
+        });
         });
 
         function deleteKullanici(id) {
-            Swal.fire({
-                title: 'Emin misiniz?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Evet, sil!',
-                cancelButtonText: 'Vazgeç'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.post("/Home/KullaniciSil", { id: id }, function (r) {
-                        if (r.success) location.reload();
-                    });
-                }
-            });
+        Swal.fire({
+        title: 'Emin misiniz?',
+        text: "Kullanıcı silinecek (pasife alınacak)!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Evet, sil!',
+        cancelButtonText: 'Vazgeç'
+        }).then((result) => {
+        if (result.isConfirmed) {
+        $.post("/Home/KullaniciSil", { id: id }, function (r) {
+        if (r.success) location.reload();
+        });
+        }
+        });
         }
     </script>
 }
