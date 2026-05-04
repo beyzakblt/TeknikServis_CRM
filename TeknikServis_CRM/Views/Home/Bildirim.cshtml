@@ -1,0 +1,142 @@
+﻿@{
+    ViewData["Title"] = "Bildirim Merkezi";
+}
+
+<div class="container-fluid mt-4 px-md-4 pb-5">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-6">
+            <h2 class="h3 mb-1 text-gray-800 fw-bold">Bildirim Merkezi</h2>
+            <p class="text-muted small">Sistemdeki son 7 günlük hareketler aşağıda listelenmiştir.</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-outline-primary rounded-pill px-4" onclick="loadFullNotifications()">
+                <i class="fas fa-sync-alt me-2"></i>Tazele
+            </button>
+        </div>
+    </div>
+
+    <div class="mb-5">
+        <h5 class="text-primary fw-bold mb-3 small text-uppercase" style="letter-spacing: 1px;">
+            <i class="fas fa-bolt me-2"></i>Yeni & Güncel
+        </h5>
+        <div id="newNotifications" class="row">
+        </div>
+    </div>
+
+    <div>
+        <h5 class="text-muted fw-bold mb-3 small text-uppercase" style="letter-spacing: 1px;">
+            <i class="fas fa-history me-2"></i>Geçmiş Bildirimler
+        </h5>
+        <div id="oldNotifications" class="row">
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            loadFullNotifications();
+        });
+
+        function loadFullNotifications() {
+            $.get('/Home/GetNotifications', function (res) {
+                let newHtml = "";
+                let oldHtml = "";
+
+                const todayStr = new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' });
+
+                if (res.items && res.items.length > 0) {
+                    res.items.forEach(item => {
+                        let config = getIconConfig(item.tip);
+
+                        // Bugün mü yoksa geçmiş mi kontrolü
+                        let isToday = item.tarih.startsWith(todayStr);
+
+                        let cardHtml = `
+                        <div class="col-md-6 col-xl-4 mb-3">
+                            <div class="card border-0 shadow-sm rounded-4 notification-card ${!isToday ? 'opacity-75 grayscale' : ''}" onclick="location.href='${item.url || '#'}'">
+                                <div class="card-body d-flex align-items-center py-3">
+                                    <div class="${config.bg} text-${config.color} p-3 rounded-circle me-3 icon-circle">
+                                        <i class="fas ${config.icon} fa-lg"></i>
+                                    </div>
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div class="d-flex justify-content-between">
+                                            <h6 class="mb-0 fw-bold small text-dark truncate">${item.baslik}</h6>
+                                            <small class="text-muted" style="font-size:10px">${item.tarih}</small>
+                                        </div>
+                                        <div class="text-muted small mt-1 truncate">${item.detay}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+
+                        if (isToday) newHtml += cardHtml;
+                        else oldHtml += cardHtml;
+                    });
+                }
+
+                $('#newNotifications').html(newHtml || '<div class="col-12 text-muted small ps-3">Bugün için yeni bir hareket yok.</div>');
+                $('#oldNotifications').html(oldHtml || '<div class="col-12 text-muted small ps-3">Geçmiş bildirim bulunmuyor.</div>');
+            });
+        }
+
+        function getIconConfig(tip) {
+            switch(tip) {
+                case 'payment': return { icon: 'fa-wallet', color: 'danger', bg: 'bg-soft-danger' };
+                case 'service': return { icon: 'fa-tools', color: 'warning', bg: 'bg-soft-warning' };
+                case 'appointment': return { icon: 'fa-calendar-check', color: 'info', bg: 'bg-soft-info' };
+                default: return { icon: 'fa-bell', color: 'primary', bg: 'bg-soft-primary' };
+            }
+        }
+    </script>
+
+    <style>
+        .notification-card {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #f1f3f9 !important;
+        }
+
+            .notification-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.08) !important;
+                border-color: #4e73df !important;
+                opacity: 1 !important;
+            }
+
+        .grayscale {
+            filter: grayscale(0.5);
+            background-color: #fcfcfc;
+        }
+
+        .truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .icon-circle {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bg-soft-danger {
+            background: rgba(231, 74, 59, 0.1);
+        }
+
+        .bg-soft-warning {
+            background: rgba(246, 194, 62, 0.1);
+        }
+
+        .bg-soft-info {
+            background: rgba(54, 185, 204, 0.1);
+        }
+
+        .bg-soft-primary {
+            background: rgba(78, 115, 223, 0.1);
+        }
+    </style>
+}

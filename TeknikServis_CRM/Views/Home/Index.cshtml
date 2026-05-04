@@ -1,74 +1,144 @@
 ﻿@{
-    ViewData["Title"] = "CRM Dashboard";
+    ViewData["Title"] = "Yönetim Paneli | Teknik CRM";
 }
 
-<div class="container-fluid mt-4 px-md-4">
+<div class="container-fluid mt-4 px-md-4 pb-5">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h4 mb-0 text-gray-800 fw-bold">Yönetim Paneli</h1>
+            <p class="text-muted mb-0 small">Sistem genel durumu ve günlük operasyon özeti.</p>
+        </div>
+        <div class="d-none d-sm-flex align-items-center">
+            <div class="bg-white shadow-sm border rounded-pill px-3 py-1 me-2">
+                <span class="text-muted small fw-bold">
+                    <i class="fas fa-calendar-alt text-primary me-2"></i>@DateTime.Now.ToString("dd MMMM yyyy, dddd")
+                </span>
+            </div>
+            <button class="btn btn-sm btn-primary shadow-sm rounded-circle p-2" onclick="location.reload()" title="Yenile">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </div>
 
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 border-start-primary kpi-card">
-                <div class="card-body p-4">
-                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1 small">Toplam Müşteri</div>
-                    <div class="h3 mb-0 fw-bold">@(ViewBag.ToplamMusteri ?? 0)</div>
+            <div class="card border-0 shadow-sm rounded-4 kpi-card bg-white h-100" onclick="location.href='/Musteri/Index'">
+                <div class="card-body p-4 text-dark">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-uppercase mb-1 text-muted small fw-bold">Müşteriler</p>
+                            <h2 class="mb-0 fw-bold text-dark">@(ViewBag.ToplamMusteri ?? 0)</h2>
+                        </div>
+                        <div class="icon-box bg-soft-primary text-primary">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>Aktif Portföy</span>
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 border-start-warning kpi-card">
-                <div class="card-body p-4">
-                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1 small">Aktif İş Emirleri</div>
-                    <div class="h3 mb-0 fw-bold">@(ViewBag.AktifIsEmri ?? 0)</div>
+            <div class="card border-0 shadow-sm rounded-4 kpi-card bg-white h-100" onclick="location.href='/ServisKayit/Index'">
+                <div class="card-body p-4 text-dark">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-uppercase mb-1 text-muted small fw-bold">İş Emirleri</p>
+                            <h2 class="mb-0 fw-bold text-dark">@(ViewBag.AktifIsEmri ?? 0)</h2>
+                        </div>
+                        <div class="icon-box bg-soft-warning text-warning">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="text-warning small fw-bold"><i class="fas fa-spinner fa-spin me-1"></i>Devam Eden</span>
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 border-start-info kpi-card">
-                <div class="card-body p-4">
-                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1 small">Bugünkü Randevular</div>
-                    <div class="h3 mb-0 fw-bold">@(ViewBag.BugunRandevuSayisi ?? 0)</div>
+            <div class="card border-0 shadow-sm rounded-4 kpi-card bg-white h-100" onclick="location.href='/Randevu/Index'">
+                <div class="card-body p-4 text-dark">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-uppercase mb-1 text-muted small fw-bold">Randevular</p>
+                            <h2 class="mb-0 fw-bold text-dark">@(ViewBag.BugunRandevuSayisi ?? 0)</h2>
+                        </div>
+                        <div class="icon-box bg-soft-info text-info">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="text-info small fw-bold"><i class="fas fa-clock me-1"></i>Bugün Beklenen</span>
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 border-start-success kpi-card">
+            <div class="card border-0 shadow-sm rounded-4 kpi-card bg-white h-100 text-dark" onclick="location.href='/Finans/KasaHareketi'">
                 <div class="card-body p-4">
-                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1 small">Kayıtlı Cihazlar</div>
-                    <div class="h3 mb-0 fw-bold">@(ViewBag.TotalCihaz ?? 0)</div>
+                    <div class="d-flex justify-content-between align-items-start text-dark">
+                        <div>
+                            <p class="text-uppercase mb-1 text-muted small fw-bold">Aylık Tahsilat</p>
+                            <h2 class="mb-0 fw-bold text-success">₺@(ViewBag.AylikTahsilat?.ToString("N0") ?? "0")</h2>
+                        </div>
+                        <div class="icon-box bg-soft-success text-success">
+                            <i class="fas fa-lira-sign"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="text-success small fw-bold"><i class="fas fa-wallet me-1"></i>Net Nakit Akışı</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 fw-bold text-primary"><i class="fas fa-calendar-day me-2"></i>Bugünün Ajandası</h6>
-                    <span class="badge bg-soft-info text-info rounded-pill">@DateTime.Now.ToString("dd MMMM yyyy")</span>
+    <div class="row g-4 text-dark">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white text-dark">
+                <div class="card-header bg-transparent py-3 border-bottom text-dark fw-bold">
+                    <i class="fas fa-chart-line text-primary me-2"></i>Servis Kayıt Performansı
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:300px; width:100%">
+                        <canvas id="dynamicAreaChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 bg-white mb-4 text-dark">
+                <div class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold text-dark"><i class="fas fa-tasks text-primary me-2"></i>Günün Planı</h6>
+                    <button class="btn btn-sm btn-soft-primary rounded-pill px-3" onclick="location.href='/Randevu/Index'">Takvime Git</button>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light small">
+                        <table class="table table-hover align-middle mb-0 text-dark">
+                            <thead class="bg-light small text-uppercase">
                                 <tr>
                                     <th class="ps-4">Saat</th>
                                     <th>Müşteri</th>
                                     <th>Konu</th>
-                                    <th class="text-end pe-4">Detay</th>
+                                    <th class="text-end pe-4">İşlem</th>
                                 </tr>
                             </thead>
-                            <tbody class="small">
+                            <tbody class="small text-dark">
                                 @if (ViewBag.BugunRandevuListesi != null && ((IEnumerable<dynamic>)ViewBag.BugunRandevuListesi).Any())
                                 {
-                                    foreach (var ran in (IEnumerable<dynamic>)ViewBag.BugunRandevuListesi)
+                                    foreach (var r in ViewBag.BugunRandevuListesi)
                                     {
                                         <tr>
-                                            <td class="ps-4 fw-bold">@ran.Saat</td>
-                                            <td class="fw-bold">@ran.MusteriAd</td>
-                                            <td>@ran.Konu</td>
+                                            <td class="ps-4 fw-bold text-primary">@r.Saat</td>
+                                            <td class="fw-bold">@r.MusteriAd</td>
+                                            <td>@r.Konu</td>
                                             <td class="text-end pe-4">
-                                                <button class="btn btn-sm btn-soft-primary" onclick="fullDetayGetir(@ran.MusteriId)">
-                                                    <i class="fas fa-user-circle"></i>
+                                                <button class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm" onclick="fullDetayGetir(@r.MusteriId)">
+                                                    <i class="fas fa-eye me-1"></i>Detay
                                                 </button>
                                             </td>
                                         </tr>
@@ -76,45 +146,11 @@
                                 }
                                 else
                                 {
-                                    <tr><td colspan="4" class="text-center py-4 text-muted small">Bugün için planlanmış randevu bulunmuyor.</td></tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-header bg-white py-3 border-bottom">
-                    <h6 class="m-0 fw-bold text-dark"><i class="fas fa-clipboard-list text-warning me-2"></i>Son Açılan İş Emirleri</h6>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light small">
-                                <tr>
-                                    <th class="ps-4">No</th>
-                                    <th>Müşteri</th>
-                                    <th>Durum</th>
-                                    <th class="text-end pe-4">İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody class="small">
-                                @if (ViewBag.SonIsEmirleri != null)
-                                {
-                                    foreach (var isEmri in ViewBag.SonIsEmirleri)
-                                    {
-                                        <tr>
-                                            <td class="ps-4 text-muted">#@isEmri.Id</td>
-                                            <td class="fw-bold">@(isEmri.Musteri?.AdSoyad ?? "Bilinmiyor")</td>
-                                            <td><span class="badge bg-soft-warning text-warning">@isEmri.Durum</span></td>
-                                            <td class="text-end pe-4">
-                                                <button class="btn btn-sm btn-outline-primary rounded-circle" onclick="fullDetayGetir(@isEmri.MusteriId)">
-                                                    <i class="fas fa-search"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
+                                    <tr>
+                                        <td colspan="4" class="text-center py-5">
+                                            <span class="text-muted small">Bugün için randevu bulunmuyor.</span>
+                                        </td>
+                                    </tr>
                                 }
                             </tbody>
                         </table>
@@ -123,38 +159,25 @@
             </div>
         </div>
 
-        <div class="col-lg-4">
-
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 fw-bold text-danger"><i class="fas fa-hand-holding-usd me-2"></i>Ödeme Takip Merkezi</h6>
-                    <a href="/ServisKayit" class="btn btn-sm btn-soft-danger rounded-pill px-3">Tümü</a>
+        <div class="col-xl-4 col-lg-5 text-dark">
+            <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white text-dark">
+                <div class="card-header bg-transparent py-3 border-bottom text-dark fw-bold">
+                    <i class="fas fa-chart-pie text-info me-2"></i>İş Emri Dağılımı
                 </div>
-                <div class="card-body p-0" style="max-height: 350px; overflow-y: auto;">
-                    <div id="dashboardYaklasanOdemeler" class="list-group list-group-flush">
-                        <div class="p-4 text-center">
-                            <div class="spinner-border spinner-border-sm text-muted" role="status"></div>
-                        </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:250px; width:100%">
+                        <canvas id="dynamicPieChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm rounded-4 h-100 mb-4">
-                <div class="card-header bg-white py-3 border-bottom">
-                    <h6 class="m-0 fw-bold text-dark"><i class="fas fa-bolt text-danger me-2"></i>Hızlı Kısayollar</h6>
+            <div class="card border-0 shadow-sm rounded-4 bg-white border-top border-danger border-4 overflow-hidden text-dark">
+                <div class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center text-dark fw-bold">
+                    <span><i class="fas fa-hand-holding-usd text-danger me-2"></i>Tahsilatlar</span>
+                    <a href="/Finans/KasaHareketi" class="small text-decoration-none text-primary">Tümü</a>
                 </div>
-                <div class="card-body p-4">
-                    <div class="d-grid gap-3">
-                        <a href="/Musteri" class="btn btn-light text-start p-3 border rounded-3 quick-btn">
-                            <i class="fas fa-user-plus text-primary me-2"></i> Müşteri Yönetimi
-                        </a>
-                        <a href="/ServisKayit" class="btn btn-light text-start p-3 border rounded-3 quick-btn">
-                            <i class="fas fa-wrench text-warning me-2"></i> Yeni Servis Kaydı
-                        </a>
-                        <a href="/Randevu" class="btn btn-light text-start p-3 border rounded-3 quick-btn">
-                            <i class="fas fa-calendar-alt text-info me-2"></i> Takvim & Randevu
-                        </a>
-                    </div>
+                <div id="dashboardYaklasanOdemeler" class="list-group list-group-flush scrollable-list" style="max-height: 400px; overflow-y: auto;">
+                    <div class="p-4 text-center"><div class="spinner-border spinner-border-sm text-muted"></div></div>
                 </div>
             </div>
         </div>
@@ -162,35 +185,149 @@
 </div>
 
 <div class="modal fade" id="mdlFullDetay" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered text-dark">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 pt-4 px-4 bg-white">
+                <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-id-card me-2"></i>Müşteri Profil Paneli</h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4 text-dark">
+                    <div class="col-md-4">
+                        <div class="p-4 rounded-4 bg-light text-center h-100">
+                            <div class="avatar-circle mx-auto mb-3 shadow-sm bg-primary text-white">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <h5 class="fw-bold mb-1" id="fd_AdSoyad">...</h5>
+                            <p class="text-muted small mb-4" id="fd_Firma">...</p>
+                            <div class="text-start">
+                                <p class="mb-2 small"><strong>Tel:</strong> <span id="fd_Tel">...</span></p>
+                                <p class="mb-2 small"><strong>E-Posta:</strong> <span id="fd_Mail">...</span></p>
+                                <p class="mb-0 small"><strong>Toplam Ciro:</strong> <span id="fd_Ciro" class="fw-bold text-success">...</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <nav>
+                            <div class="nav nav-tabs border-0 bg-light rounded-pill p-1 mb-3" role="tablist">
+                                <button class="nav-link active rounded-pill border-0 py-2 flex-fill small fw-bold" data-bs-toggle="tab" data-bs-target="#tabCihazlar">Cihazlar</button>
+                                <button class="nav-link rounded-pill border-0 py-2 flex-fill small fw-bold" data-bs-toggle="tab" data-bs-target="#tabFinans">Finans Geçmişi</button>
+                            </div>
+                        </nav>
+                        <div class="tab-content text-dark">
+                            <div class="tab-pane fade show active" id="tabCihazlar">
+                                <div class="row g-2" id="lstCihazlar"></div>
+                            </div>
+                            <div class="tab-pane fade" id="tabFinans">
+                                <div class="table-responsive rounded-3 border">
+                                    <table class="table table-sm table-hover mb-0 text-dark">
+                                        <thead class="bg-light"><tr><th class="ps-3">Tarih</th><th>İşlem</th><th class="text-end pe-3">Tutar</th></tr></thead>
+                                        <tbody id="lstFinans" class="small"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
         $(document).ready(function () {
         dashboardOdemeleriGetir();
+
+        const areaData = @Html.Raw(ViewBag.ServisGrafikData ?? "[]");
+        const pieData = @Html.Raw(ViewBag.PastaGrafikData ?? "[0,0,0]");
+
+        new Chart(document.getElementById('dynamicAreaChart'), {
+        type: 'line',
+        data: {
+        labels: ["5 Ay Önce", "4 Ay Önce", "3 Ay Önce", "2 Ay Önce", "Geçen Ay", "Bu Ay"],
+        datasets: [{
+        label: "Servis Kaydı",
+        data: areaData,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.08)',
+        fill: true,
+        tension: 0.4
+        }]
+        },
+        options: { maintainAspectRatio: false }
+        });
+
+        new Chart(document.getElementById('dynamicPieChart'), {
+        type: 'doughnut',
+        data: {
+        labels: ["Tamamlandı", "İşlemde", "Parça Bekliyor"],
+        datasets: [{
+        data: pieData,
+        backgroundColor: ['#10b981', '#f59e0b', '#0ea5e9']
+        }]
+        },
+        options: { maintainAspectRatio: false, cutout: '78%' }
+        });
         });
 
         function dashboardOdemeleriGetir() {
-        // ServisKayit Controller'ındaki GetYaklasanOdemeler metodunu kullanıyoruz
         $.get('/ServisKayit/GetYaklasanOdemeler', function (res) {
         let div = $('#dashboardYaklasanOdemeler').empty();
-        if (res.length === 0) {
-        div.append('<div class="p-4 text-center text-muted small"><i class="fas fa-check-circle text-success d-block mb-2 fa-2x"></i>Yakın zamanda bekleyen ödeme yok.</div>');
+        if (!res || res.length === 0) {
+        div.append('<div class="p-5 text-center text-muted small">Bekleyen ödeme yok.</div>');
         } else {
         res.forEach(o => {
+        let mId = o.musteriId || o.MusteriId;
         div.append(`
-        <div class="list-group-item list-group-item-action border-0 px-4 py-3">
+        <div class="list-group-item border-0 px-4 py-3 border-bottom bg-transparent">
         <div class="d-flex w-100 justify-content-between align-items-center">
-        <div class="fw-bold text-dark" style="font-size:0.85rem">${o.musteriAd}</div>
-        <span class="badge bg-soft-danger text-danger rounded-pill">${o.ucret} ₺</span>
+        <div class="fw-bold text-dark cursor-pointer" onclick="fullDetayGetir(${mId})">
+        <i class="fas fa-user-circle me-1 text-primary"></i>${o.musteriAd}
         </div>
-        <div class="d-flex justify-content-between align-items-center mt-1">
-        <small class="text-muted font-monospace">${o.servisNo}</small>
-        <small class="fw-bold text-muted" style="font-size:0.75rem"><i class="far fa-calendar-alt me-1"></i>Vade: ${o.tarih}</small>
+        <span class="badge bg-soft-danger text-danger rounded-pill fw-bold">${o.ucret} ₺</span>
+        </div>
+        <div class="mt-2 d-flex justify-content-between align-items-center">
+        <small class="text-muted">#${o.servisNo || 'Servis'}</small>
+        <div class="btn-group">
+        <button class="btn btn-sm btn-soft-success rounded-pill px-3 py-1 fw-bold border-0 me-2"
+        onclick="location.href='/Finans/KasaHareketi'" title="Ödeme Sayfasına Git">
+        FİNANS GİT
+        </button>
+        <button class="btn btn-sm btn-soft-warning rounded-circle p-2 border-0"
+        onclick="odemeHatirlatmaMailiGonder(${mId}, '${o.ucret}')" title="Mail Hatırlat">
+        <i class="fas fa-envelope"></i>
+        </button>
         </div>
         </div>
-        `);
+        </div>`);
+        });
+        }
+        });
+        }
+
+        function odemeHatirlatmaMailiGonder(mId, tutar) {
+        Swal.fire({
+        title: 'Mail Gönderilsin mi?',
+        text: tutar + " ₺ tutarındaki ödeme için müşteriye hatırlatma iletilecektir.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#1cc88a',
+        confirmButtonText: 'Evet, Gönder',
+        cancelButtonText: 'Vazgeç'
+        }).then((result) => {
+        if (result.isConfirmed) {
+        Swal.fire({ title: 'Gönderiliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        $.post('/Iletisim/OdemeHatirlat', { musteriId: mId, tutar: tutar }, function (res) {
+        Swal.close();
+        if (res.success) {
+        Swal.fire('Başarılı', 'Mail başarıyla gönderildi.', 'success');
+        } else {
+        Swal.fire('Hata', res.message || 'Gönderim başarısız.', 'error');
+        }
         });
         }
         });
@@ -198,30 +335,24 @@
 
         function fullDetayGetir(id) {
         if (!id) return;
+        Swal.fire({ title: 'Yükleniyor...', didOpen: () => { Swal.showLoading(); } });
         $.get('/Musteri/GetFullDetay/' + id, function (res) {
+        Swal.close();
         if (res.success) {
         let m = res.musteri;
         $('#fd_AdSoyad').text(m.adSoyad);
-        $('#fd_Firma').text(m.firmaAdi || "Bireysel Müşteri");
-        $('#fd_Tel').text(m.telefon);
+        $('#fd_Firma').text(m.firmaAdi || "Bireysel");
+        $('#fd_Tel').text(m.telefon || "-");
         $('#fd_Mail').text(m.eposta || "-");
-        $('#fd_Ciro').text(`₺${res.toplamCiro.toLocaleString('tr-TR', {minimumFractionDigits: 2})}`);
+        $('#fd_Ciro').text(`₺${res.toplamCiro.toLocaleString('tr-TR')}`);
 
-        let vergiHtm = `
-        <div class='fw-bold'>${m.vergiDairesi || '-'} / ${m.vergiNo || '-'}</div>
-        <div class='text-muted small mt-1'><i class='fas fa-map-marker-alt me-1'></i>${res.adresler[0]?.il || ''} ${res.adresler[0]?.acikAdres || ''}</div>
-        `;
-        $('#fd_VergiDetay').html(vergiHtm);
+        let cHtm = "";
+        res.cihazlar.forEach(c => { cHtm += `<div class="col-6 p-2"><div class="p-2 border rounded-3 bg-white small text-center"><b>${c.marka}</b><br>${c.model}</div></div>`; });
+        $('#lstCihazlar').html(cHtm || "Cihaz yok.");
 
-        let cHtm = res.cihazlar.length === 0 ? "<div class='text-muted p-3'>Cihaz yok.</div>" : "";
-        res.cihazlar.forEach(c => cHtm += `<div class='col-md-6'><div class='p-3 border rounded shadow-sm bg-white mb-2 small'><b>${c.marka}</b> ${c.model}<br><span class='text-muted'>SN: ${c.seriNo}</span></div></div>`);
-        $('#lstCihazlar').html(cHtm);
-
-        let fHtm = ""; res.finans.forEach(f => fHtm += `<tr><td>${f.tarih}</td><td>${f.islemTipi}</td><td class='text-end fw-bold'>₺${f.tutar.toLocaleString('tr-TR')}</td></tr>`);
-        $('#lstFinans').html(fHtm);
-
-        let lHtm = ""; res.loglar.forEach(l => lHtm += `<tr><td>${l.tarih}</td><td><span class='badge bg-light text-dark border'>${l.islemTipi}</span></td><td>${l.aciklama}</td></tr>`);
-        $('#lstLoglar').html(lHtm);
+        let fHtm = "";
+        res.finans.forEach(f => { fHtm += `<tr><td>${new Date(f.tarih).toLocaleDateString()}</td><td>${f.islem}</td><td class="text-end fw-bold">${f.tutar.toLocaleString()} ₺</td></tr>`; });
+        $('#lstFinans').html(fHtm || "Hareket yok.");
 
         $('#mdlFullDetay').modal('show');
         }
@@ -230,81 +361,85 @@
     </script>
 
     <style>
+        body {
+        background-color: #f1f5f9;
+        color: #1e293b;
+        }
+
         .kpi-card {
-        transition: transform 0.2s;
-        cursor: default;
+        cursor: pointer;
+        transition: 0.3s;
         }
 
         .kpi-card:hover {
         transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        .border-start-primary {
-        border-left: 5px solid #4e73df !important;
-        }
-
-        .border-start-warning {
-        border-left: 5px solid #f6c23e !important;
-        }
-
-        .border-start-info {
-        border-left: 5px solid #36b9cc !important;
-        }
-
-        .border-start-success {
-        border-left: 5px solid #1cc88a !important;
-        }
-
-        .bg-soft-info {
-        background: rgba(54, 185, 204, 0.1);
-        }
-
-        .bg-soft-warning {
-        background: rgba(246, 194, 62, 0.1);
+        .icon-box {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         }
 
         .bg-soft-primary {
-        background: rgba(78, 115, 223, 0.1);
+        background: #eff6ff;
+        }
+
+        .bg-soft-warning {
+        background: #fffbeb;
+        }
+
+        .bg-soft-info {
+        background: #f0f9ff;
+        }
+
+        .bg-soft-success {
+        background: #ecfdf5;
         }
 
         .bg-soft-danger {
-        background: rgba(231, 74, 59, 0.1);
-        }
-
-        .quick-btn {
-        transition: 0.2s;
-        font-weight: 600;
-        font-size: 0.9rem;
-        }
-
-        .quick-btn:hover {
-        background: #4e73df !important;
-        color: white !important;
-        transform: scale(1.02);
+        background: #fef2f2;
         }
 
         .avatar-circle {
-        width: 70px;
-        height: 70px;
-        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 24px;
         }
 
-        .nav-pills .nav-link.active {
-        background-color: #4e73df;
+        .nav-tabs .nav-link.active {
+        background: #fff !important;
+        color: #3b82f6 !important;
         }
 
-        /* Dashboard Liste Stili */
-        #dashboardYaklasanOdemeler .list-group-item {
-        transition: background 0.2s;
-        border-bottom: 1px solid #f1f1f1 !important;
+        .text-dark {
+        color: #1e293b !important;
         }
 
-        #dashboardYaklasanOdemeler .list-group-item:hover {
-        background-color: #f8f9fc;
+        .btn-soft-success {
+        background-color: #d1fae5;
+        color: #065f46;
+        }
+
+        .btn-soft-success:hover {
+        background-color: #a7f3d0;
+        }
+
+        .btn-soft-warning {
+        background-color: #fef3c7;
+        color: #92400e;
+        }
+
+        .btn-soft-warning:hover {
+        background-color: #fde68a;
         }
     </style>
 }

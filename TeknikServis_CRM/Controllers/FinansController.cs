@@ -28,23 +28,19 @@ namespace TeknikServis_CRM.Controllers
             return View();
         }
 
-        // TÜM GRAFİKLER İÇİN TEK VERİ KAYNAĞI
         [HttpGet]
         public async Task<JsonResult> GetFinansOzetGrafik()
         {
-            // 1. İşlem Tipine Göre Dağılım (Alan/Çizgi Grafiği için)
             var islemler = await _context.KasaHareketleris.AsNoTracking()
                 .GroupBy(x => x.IslemTipi ?? "Genel Tahsilat")
                 .Select(g => new { etiket = g.Key, toplam = g.Sum(s => s.Tutar ?? 0) })
                 .ToListAsync();
 
-            // 2. Ödeme Yöntemi Dağılımı (Doughnut/Simit Grafiği için)
             var yontemler = await _context.KasaHareketleris.AsNoTracking()
                 .GroupBy(x => x.OdemeYontemi ?? "Belirtilmemiş")
                 .Select(g => new { etiket = g.Key, toplam = g.Sum(s => s.Tutar ?? 0) })
                 .ToListAsync();
 
-            // 3. Cihaz Marka Dağılımı (Pasta Grafiği için)
             var cihazlar = await (from s in _context.ServisKayitlaris
                                   join c in _context.MusteriCihazlaris on s.MusteriCihazId equals c.Id
                                   group c by c.Marka into g
@@ -123,12 +119,61 @@ namespace TeknikServis_CRM.Controllers
             if (k != null) { _context.KasaHareketleris.Remove(k); await _context.SaveChangesAsync(); return Json(new { success = true }); }
             return Json(new { success = false });
         }
-
         [HttpPost]
         public async Task<JsonResult> OdemeAl(KasaHareketleri model)
         {
-            try { model.Tarih = DateTime.Now; _context.KasaHareketleris.Add(model); await _context.SaveChangesAsync(); return Json(new { success = true }); }
-            catch (Exception ex) { return Json(new { success = false, message = ex.Message }); }
+            try
+            {
+                model.Tarih = DateTime.Now;
+                // Eğer seçilen kategori "Gider" ise tutarı negatif olarak kaydet
+                if (model.IslemTipi == "Gider")
+                {
+                    model.Tutar = -Math.Abs(model.Tutar ?? 0);
+                }
+                else
+                {
+                    model.Tutar = Math.Abs(model.Tutar ?? 0);
+                }
+                _context.KasaHareketleris.Add(model);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            catch (Exception ex) { return Json(new { success = false }); }
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> HizliOdemeAl(int servisId, string odemeYontemi)
+        {
+            try
+            {
+                if (servisId <= 0) return Json(new { success = false, message = "Geçersiz ID!" });
+
+                // Modelindeki tablo adı ServisKayitlari, anahtar Id
+                var servis = await _context.ServisKayitlaris.FindAsync(servisId);
+
+                if (servis == null) return Json(new { success = false, message = "Kayıt bulunamadı." });
+
+                servis.OdemeDurumu = "Ödendi";
+                servis.KapanisTarihi = DateTime.Now; // Ödeme tarihini güncelle
+
+                var kasa = new KasaHareketleri
+                {
+                    MusteriId = servis.MusteriId,
+                    Tutar = servis.Ucret ?? 0,
+                    Tarih = DateTime.Now,
+                    IslemTipi = "Servis Tahsilatı",
+                    OdemeYontemi = odemeYontemi ?? "Nakit"
+                };
+
+                _context.KasaHareketleris.Add(kasa);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Hata: " + ex.Message });
+            }
         }
     }
 }

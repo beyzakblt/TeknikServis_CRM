@@ -2,15 +2,15 @@
     ViewData["Title"] = "Müşteri Portföyü & Yönetimi";
 }
 
-<div class="container-fluid mt-4 px-md-4">
+<div class="container-fluid mt-4 px-md-4 pb-5 text-dark">
     <div class="row align-items-center mb-4">
         <div class="col-md-6">
             <h2 class="h3 mb-1 text-gray-800 font-weight-bold"><i class="fas fa-users text-primary me-2"></i>Müşteri Portföyü</h2>
-            <p class="text-muted mb-0 small text-uppercase fw-bold">Müşteri İlişkileri ve Toplu Operasyon Yönetimi</p>
+            <p class="text-muted mb-0 small text-uppercase fw-bold">Müşteri İlişkileri ve Borç Yönetimi</p>
         </div>
         <div class="col-md-6 text-md-end mt-3 mt-md-0">
             <div class="btn-group me-2 shadow-sm">
-                <button class="btn btn-outline-primary dropdown-toggle rounded-pill px-3" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="btn btn-outline-primary dropdown-toggle rounded-pill px-3" data-bs-toggle="dropdown">
                     <i class="fas fa-layer-group me-1"></i> Toplu İşlemler
                 </button>
                 <ul class="dropdown-menu shadow border-0 mt-2">
@@ -31,7 +31,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table id="tblMusteriler" class="table table-hover align-middle w-100 m-0">
+                <table id="tblMusteriler" class="table table-hover align-middle w-100 m-0 text-dark">
                     <thead class="bg-light">
                         <tr class="text-secondary small">
                             <th style="width: 40px;"><input type="checkbox" class="form-check-input" id="chkAll"></th>
@@ -50,60 +50,53 @@
     </div>
 </div>
 
-<div class="modal fade" id="mdlTopluIslem" tabindex="-1" aria-hidden="true" style="z-index: 1070;">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-dark text-white border-0">
-                <h6 class="modal-title fw-bold" id="topluIslemBaslik">Toplu İşlem</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="mdlHizliTahsilat" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-success text-white py-2 border-0">
+                <h6 class="modal-title fw-bold small"><i class="fas fa-lira-sign me-2"></i>Hızlı Tahsilat Al</h6>
+                <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <div id="divTeknisyenSecimi" class="mb-3 d-none">
-                    <label class="form-label small fw-bold">Görevlendirilecek Teknisyen</label>
-                    <select id="ddlTopluTeknisyen" class="form-select form-select-sm border-primary">
-                        <option value="">-- Teknisyen Seçiniz --</option>
-                        @if (ViewBag.Teknisyenler != null)
-                        {
-                            foreach (var t in ViewBag.Teknisyenler)
-                            {
-                                <option value="@t.Id">@t.AdSoyad</option>
-                            }
-                        }
+            <div class="modal-body p-4 text-center text-dark">
+                <input type="hidden" id="ht_MusteriId" />
+                <h6 class="fw-bold mb-1" id="ht_MusteriAd">...</h6>
+                <div class="my-3 text-start">
+                    <label class="small fw-bold mb-1 text-muted">Tahsil Edilecek Tutar (₺)</label>
+                    <input type="number" id="ht_Tutar" class="form-control form-control-lg fw-bold text-success text-center border-2" placeholder="0.00" step="0.01" />
+                    <div class="text-center mt-2"><small class="badge bg-light text-muted border" id="ht_BakiyeBilgi">Bakiye hesaplanıyor...</small></div>
+                </div>
+                <div class="mb-4 text-start">
+                    <label class="small fw-bold mb-1">Ödeme Yöntemi</label>
+                    <select id="ht_Yontem" class="form-select form-select-sm rounded-pill bg-light border-0">
+                        <option value="Nakit">Nakit</option>
+                        <option value="Kredi Kartı">Kredi Kartı</option>
+                        <option value="Havale/EFT">Havale/EFT</option>
                     </select>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold" id="lblKonu">Konu / Başlık</label>
-                    <input type="text" id="txtTopluKonu" class="form-control form-control-sm" placeholder="...">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold" id="lblMesaj">Mesaj / Detay</label>
-                    <textarea id="txtTopluMesaj" class="form-control form-control-sm" rows="4"></textarea>
-                </div>
-                <div class="alert alert-info py-2 small mb-0 border-0 shadow-sm text-center">
-                    <i class="fas fa-info-circle me-1 text-primary"></i> <span id="spnSeciliSayisi">0</span> kişi üzerinde işlem yapılacak.
-                </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button class="btn btn-primary w-100 rounded-pill fw-bold shadow" onclick="topluIslemiTamamla()">İşlemi Onayla ve Başlat</button>
+                <button class="btn btn-success w-100 rounded-pill fw-bold shadow" onclick="tahsilatKaydet()">Tahsilatı Onayla</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="mdlGorselYukle" tabindex="-1" style="z-index: 1090;">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content shadow-lg border-0">
-            <div class="modal-header bg-dark text-white p-2">
-                <h6 class="modal-title small">Cihaz Görseli Yükle</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="mdlIslemTekrari" tabindex="-1" aria-hidden="true" style="z-index: 1080;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg text-dark">
+            <div class="modal-header bg-primary text-white border-0 py-2">
+                <h6 class="modal-title fw-bold">Hızlı Servis Kaydı</h6>
+                <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-3">
-                <input type="hidden" id="hdnGorselCihazId" />
-                <label class="form-label small fw-bold text-muted mb-1">Dosya Seçin</label>
-                <input type="file" id="fileCihazGorsel" class="form-control form-control-sm mb-3" accept="image/*" />
-                <button class="btn btn-primary btn-sm w-100 shadow-sm rounded-pill" onclick="cihazGorselKaydet()">
-                    <i class="fas fa-upload me-1"></i> Yükle ve Güncelle
-                </button>
+            <div class="modal-body p-4">
+                <input type="hidden" id="hdnIslemMusteriId" />
+                <div class="mb-3">
+                    <label class="small fw-bold">Cihaz Seçimi</label>
+                    <select id="ddlTekrarCihaz" class="form-select border-primary"></select>
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold">Arıza Şikayeti</label>
+                    <textarea id="txtServisAciklama" class="form-control border-primary" rows="3" placeholder="Arıza detayını buraya yazın..."></textarea>
+                </div>
+                <button type="button" class="btn btn-primary w-100 rounded-pill shadow fw-bold" onclick="islemTekrariniKaydet()">İŞ EMRİ OLUŞTUR VE BAŞLAT</button>
             </div>
         </div>
     </div>
@@ -113,22 +106,22 @@
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-primary text-white border-0 py-3">
-                <h5 class="modal-title fw-bold" id="modalBaslik"><i class="fas fa-user-edit me-2"></i>Müşteri Kartı</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title fw-bold" id="modalBaslik"><i class="fas fa-user-plus me-2"></i>Müşteri Bilgileri</h5>
+                <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"></button>
             </div>
             <form id="frmMusteri">
-                <div class="modal-body p-4 bg-light">
+                <div class="modal-body p-4 bg-light text-dark">
                     <input type="hidden" name="Id" id="txtId" value="0" />
                     <div class="row g-4">
                         <div class="col-md-6">
                             <div class="card border-0 shadow-sm h-100">
                                 <div class="card-header bg-white fw-bold text-primary small">TEMEL BİLGİLER</div>
                                 <div class="card-body row g-3">
-                                    <div class="col-md-6"><label class="form-label small fw-bold">Ad</label><input type="text" name="Ad" id="txtAd" class="form-control form-control-sm" required /></div>
-                                    <div class="col-md-6"><label class="form-label small fw-bold">Soyad</label><input type="text" name="Soyad" id="txtSoyad" class="form-control form-control-sm" required /></div>
-                                    <div class="col-md-12"><label class="form-label small fw-bold">Firma Adı</label><input type="text" name="FirmaAdi" id="txtFirmaAdi" class="form-control form-control-sm" /></div>
+                                    <div class="col-md-6"><label class="small fw-bold">Ad</label><input type="text" name="Ad" id="txtAd" class="form-control form-control-sm" required /></div>
+                                    <div class="col-md-6"><label class="small fw-bold">Soyad</label><input type="text" name="Soyad" id="txtSoyad" class="form-control form-control-sm" required /></div>
+                                    <div class="col-md-12"><label class="small fw-bold">Firma Adı</label><input type="text" name="FirmaAdi" id="txtFirmaAdi" class="form-control form-control-sm" /></div>
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold">Tip</label>
+                                        <label class="small fw-bold">Tip</label>
                                         <select name="MusteriTipId" id="ddlMusteriTip" class="form-select form-select-sm">
                                             @foreach (var item in ViewBag.MusteriTipleri)
                                             {
@@ -137,7 +130,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold">Durum</label>
+                                        <label class="small fw-bold">Durum</label>
                                         <select name="MusteriDurumId" id="ddlMusteriDurum" class="form-select form-select-sm">
                                             @foreach (var item in ViewBag.MusteriDurumlari)
                                             {
@@ -152,17 +145,17 @@
                             <div class="card border-0 shadow-sm h-100">
                                 <div class="card-header bg-white fw-bold text-primary small">İLETİŞİM</div>
                                 <div class="card-body row g-3">
-                                    <div class="col-md-6"><label class="form-label small fw-bold">Telefon</label><input type="text" name="Telefon" id="txtTelefon" class="form-control form-control-sm" required /></div>
-                                    <div class="col-md-6"><label class="form-label small fw-bold">E-Posta</label><input type="email" name="Eposta" id="txtEposta" class="form-control form-control-sm" /></div>
-                                    <div class="col-md-12"><label class="form-label small fw-bold">Adres</label><textarea name="AcikAdres" id="txtAcikAdres" class="form-control form-control-sm" rows="3"></textarea></div>
+                                    <div class="col-md-6"><label class="small fw-bold">Telefon</label><input type="text" name="Telefon" id="txtTelefon" class="form-control form-control-sm" required /></div>
+                                    <div class="col-md-6"><label class="small fw-bold">E-Posta</label><input type="email" name="Eposta" id="txtEposta" class="form-control form-control-sm" /></div>
+                                    <div class="col-md-12"><label class="small fw-bold">Açık Adres</label><textarea name="AcikAdres" id="txtAcikAdres" class="form-control form-control-sm" rows="3"></textarea></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-white py-3">
+                <div class="modal-footer bg-white border-top">
                     <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-5 shadow-sm">Müşteriyi Kaydet</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 shadow">Kaydet</button>
                 </div>
             </form>
         </div>
@@ -171,65 +164,47 @@
 
 <div class="modal fade" id="mdlFullDetay" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden text-dark">
             <div class="modal-header bg-dark text-white border-0 py-3">
                 <h5 class="modal-title fw-bold"><i class="fas fa-id-badge me-2"></i>Müşteri Komuta Merkezi</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0">
                 <input type="hidden" id="hdnAktifMusteriId" value="0" />
                 <div class="row g-0">
-                    <div class="col-md-4 bg-light border-end d-flex flex-column">
-                        <div class="p-4 text-center border-bottom bg-white">
-                            <div class="bg-primary text-white d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow" style="width:70px; height:70px; font-size:1.5rem;"><i class="fas fa-user"></i></div>
-                            <h5 id="fd_AdSoyad" class="fw-bold text-dark mb-1">...</h5>
-                            <p id="fd_Firma" class="text-muted small mb-0">...</p>
-                            <span class="badge bg-success mt-2 px-3 py-2 shadow-sm" id="fd_Ciro">Ciro: 0.00 ₺</span>
+                    <div class="col-md-4 bg-light border-end text-center">
+                        <div class="p-4 border-bottom bg-white">
+                            <div class="bg-primary text-white d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-sm" style="width:70px; height:70px; font-size:1.5rem;"><i class="fas fa-user"></i></div>
+                            <h5 id="fd_AdSoyad" class="fw-bold mb-1">...</h5>
+                            <p id="fd_Firma" class="text-muted small mb-1">...</p>
+                            <span class="badge bg-success shadow-sm" id="fd_Ciro">0.00 ₺</span>
                         </div>
-                        <div class="p-3 flex-grow-1 overflow-auto small">
+                        <div class="p-3 text-start small">
                             <div class="mb-4">
-                                <div class="d-flex mb-2"><i class="fas fa-phone text-primary me-2"></i> <span id="fd_Tel" class="fw-bold"></span></div>
-                                <div class="d-flex mb-2"><i class="fas fa-envelope text-primary me-2"></i> <span id="fd_Mail"></span></div>
-                                <div class="d-flex mb-2"><i class="fas fa-calendar-alt text-primary me-2"></i> <span>Kayıt: <b id="fd_Kayit"></b></span></div>
+                                <div class="mb-2 text-dark"><i class="fas fa-phone text-primary me-2"></i> <span id="fd_Tel"></span></div>
+                                <div class="mb-2 text-dark"><i class="fas fa-envelope text-primary me-2"></i> <span id="fd_Mail"></span></div>
                             </div>
-                            <h6 class="fw-bold text-primary mb-3"><i class="fas fa-bolt me-2"></i>Hızlı İşlemler</h6>
                             <div class="d-grid gap-2">
-                                <button id="btnIslemTekrari" class="btn btn-primary btn-sm text-start fw-bold shadow-sm"><i class="fas fa-tools me-2"></i>Servis / İş Emri Başlat</button>
-                                <button class="btn btn-outline-info btn-sm text-start" onclick="tekilMailAc()"><i class="fas fa-paper-plane me-2"></i>Müşteriye Mail Gönder</button>
+                                <button class="btn btn-primary btn-sm rounded-pill shadow-sm" onclick="islemTekrariModalPopup()"><i class="fas fa-tools me-2"></i>Servis Başlat</button>
+                                <button class="btn btn-outline-info btn-sm rounded-pill" onclick="tekilMailAc()"><i class="fas fa-paper-plane me-2"></i>E-Posta Gönder</button>
                             </div>
                         </div>
                     </div>
-
                     <div class="col-md-8 p-4 bg-white">
-                        <ul class="nav nav-pills nav-fill mb-3 bg-light p-1 rounded-pill" id="detayTabs">
-                            <li class="nav-item"><a class="nav-link active rounded-pill small fw-bold" data-bs-toggle="tab" href="#tabFinans"><i class="fas fa-lira-sign me-1"></i>Finans</a></li>
-                            <li class="nav-item"><a class="nav-link rounded-pill small fw-bold" data-bs-toggle="tab" href="#tabCihazlar"><i class="fas fa-laptop me-1"></i>Cihazlar</a></li>
-                            <li class="nav-item"><a class="nav-link rounded-pill small fw-bold" data-bs-toggle="tab" href="#tabNotlar"><i class="fas fa-sticky-note me-1"></i>Notlar</a></li>
-                            <li class="nav-item"><a class="nav-link rounded-pill small fw-bold" data-bs-toggle="tab" href="#tabLoglar"><i class="fas fa-history me-1"></i>Tarihçe</a></li>
+                        <ul class="nav nav-tabs border-0 bg-light rounded-pill p-1 mb-3">
+                            <li class="nav-item flex-fill text-center"><a class="nav-link active rounded-pill border-0 small fw-bold" data-bs-toggle="tab" href="#tabFinans">Finans</a></li>
+                            <li class="nav-item flex-fill text-center"><a class="nav-link rounded-pill border-0 small fw-bold" data-bs-toggle="tab" href="#tabCihazlar">Cihazlar</a></li>
+                            <li class="nav-item flex-fill text-center"><a class="nav-link rounded-pill border-0 small fw-bold" data-bs-toggle="tab" href="#tabNotlar">Notlar</a></li>
                         </ul>
-                        <div class="tab-content" style="height: 400px; overflow-y: auto;">
-                            <div class="tab-pane fade show active" id="tabFinans">
-                                <table class="table table-sm table-hover border rounded small">
-                                    <thead class="table-light"><tr><th>Tarih</th><th>İşlem</th><th class="text-end">Tutar</th></tr></thead>
-                                    <tbody id="lstFinans"></tbody>
-                                </table>
-                            </div>
-                            <div class="tab-pane fade" id="tabCihazlar">
-                                <div class="row g-3" id="lstCihazlar"></div>
-                            </div>
+                        <div class="tab-content" style="max-height: 400px; overflow-y: auto;">
+                            <div class="tab-pane fade show active" id="tabFinans"><table class="table table-sm table-hover"><tbody id="lstFinans"></tbody></table></div>
+                            <div class="tab-pane fade" id="tabCihazlar"><div class="row g-2" id="lstCihazlar"></div></div>
                             <div class="tab-pane fade" id="tabNotlar">
-                                <div class="bg-light p-2 rounded mb-3">
-                                    <div class="input-group input-group-sm">
-                                        <textarea id="txtYeniNot" class="form-control" rows="2" placeholder="Yeni bir not yazın..."></textarea>
-                                        <button class="btn btn-primary px-3" onclick="musteriyeNotEkle()"><i class="fas fa-save"></i></button>
-                                    </div>
+                                <div class="input-group input-group-sm mb-3">
+                                    <textarea id="txtYeniNot" class="form-control border-primary" placeholder="Yeni not ekle..."></textarea>
+                                    <button class="btn btn-primary" onclick="musteriyeNotEkle()">Kaydet</button>
                                 </div>
-                                <div class="list-group list-group-flush border-top" id="lstNotlar"></div>
-                            </div>
-                            <div class="tab-pane fade" id="tabLoglar">
-                                <table class="table table-sm small">
-                                    <tbody id="lstLoglar"></tbody>
-                                </table>
+                                <div id="lstNotlar" class="list-group list-group-flush"></div>
                             </div>
                         </div>
                     </div>
@@ -239,20 +214,27 @@
     </div>
 </div>
 
-<div class="modal fade" id="mdlIslemTekrari" tabindex="-1" aria-hidden="true" style="z-index: 1080;">
+<div class="modal fade" id="mdlTopluIslem" tabindex="-1" aria-hidden="true" style="z-index: 1070;">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white border-0">
-                <h5 class="modal-title fw-bold"><i class="fas fa-tools me-2"></i>Yeni Servis Kaydı</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
+        <div class="modal-content border-0 shadow-lg text-dark">
+            <div class="modal-header bg-dark text-white border-0 py-2"><h6 class="modal-title fw-bold" id="topluIslemBaslik">Toplu İşlem</h6><button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"></button></div>
             <div class="modal-body p-4">
-                <input type="hidden" id="hdnIslemMusteriId" />
-                <div class="mb-3"><label class="form-label small fw-bold">Cihaz Seçimi</label><select id="ddlTekrarCihaz" class="form-select form-select-sm border-primary" required></select></div>
-                <div class="mb-3"><label class="form-label small fw-bold">Servis / Arıza Şikayeti</label><textarea id="txtServisAciklama" class="form-control form-control-sm" rows="3" required placeholder="Talep detayları..."></textarea></div>
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-primary w-100 rounded-pill shadow" onclick="islemTekrariniKaydet()">İşlemi Başlat</button>
+                <div id="divTeknisyenSecimi" class="mb-3 d-none">
+                    <label class="small fw-bold">Görevlendirilecek Teknisyen</label>
+                    <select id="ddlTopluTeknisyen" class="form-select border-primary">
+                        @if (ViewBag.Teknisyenler != null)
+                        {
+                            foreach (var t in ViewBag.Teknisyenler)
+                            {
+                                <option value="@t.Id">@t.AdSoyad</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="mb-3"><label class="small fw-bold" id="lblKonu">Konu</label><input type="text" id="txtTopluKonu" class="form-control border-primary"></div>
+                <div class="mb-3"><label class="small fw-bold" id="lblMesaj">Mesaj İçeriği</label><textarea id="txtTopluMesaj" class="form-control border-primary" rows="4"></textarea></div>
+                <div class="alert alert-info py-2 small border-0"><i class="fas fa-info-circle me-1"></i> <span id="spnSeciliSayisi">0</span> kişi seçildi.</div>
+                <button class="btn btn-primary w-100 rounded-pill shadow" onclick="topluIslemiTamamla()">İşlemi Onayla</button>
             </div>
         </div>
     </div>
@@ -273,208 +255,98 @@
         "ajax": { "url": "/Musteri/GetMusteriListesi", "dataSrc": "" },
         "columns": [
         { "data": "id", "orderable": false, "render": id => `<input type="checkbox" class="form-check-input chkMusteri" value="${id}" onchange="checkCount()">` },
-        { "data": null, "render": d => `<div class="fw-bold text-primary" onclick="fullDetayGetir(${d.id})" style="cursor:pointer; text-decoration:underline;">${d.adSoyad}</div><div class="small text-muted">${d.firmaAdi || '-'}</div>` },
-        { "data": null, "render": d => `<div class="small"><i class="fas fa-phone me-1 text-muted"></i>${d.telefon || '-'}</div><div class="small text-muted">${d.eposta || '-'}</div>` },
+        { "data": null, "render": d => `<div class="fw-bold text-primary cursor-pointer" onclick="fullDetayGetir(${d.id})">${d.adSoyad}</div><div class="small text-muted">${d.firmaAdi || '-'}</div>` },
+        { "data": null, "render": d => `<div class="small"><i class="fas fa-phone me-1 text-primary"></i>${d.telefon}</div><div class="small opacity-75">${d.eposta || ''}</div>` },
         { "data": "tipAdi", "render": d => `<span class="badge bg-soft-primary text-primary px-3">${d}</span>` },
-        { "data": "toplamTahsilat", "render": d => `<span class="fw-bold text-dark">₺${parseFloat(d).toLocaleString('tr-TR', {minimumFractionDigits: 2})}</span>` },
-        { "data": "durumAdi", "render": (d, t, r) => `<span class="badge shadow-sm px-3" style="background-color:${r.renkKodu}">${d}</span>` },
+        { "data": "toplamTahsilat", "render": d => `<span class="fw-bold">₺${parseFloat(d).toLocaleString('tr-TR')}</span>` },
+        { "data": "durumAdi", "render": (d, t, r) => `<span class="badge" style="background-color:${r.renkKodu}">${d}</span>` },
         {
-        "data": "id",
-        "className": "text-center",
-        "render": id => `
-        <div class="d-flex justify-content-center gap-1">
-        <button class="btn btn-sm btn-outline-info rounded-circle action-btn" onclick="fullDetayGetir(${id})" title="Detaylar"><i class="fas fa-search"></i></button>
-        <button class="btn btn-sm btn-outline-warning rounded-circle action-btn" onclick="musteriDuzenle(${id})" title="Düzenle"><i class="fas fa-pencil-alt"></i></button>
-        <button class="btn btn-sm btn-outline-danger rounded-circle action-btn" onclick="musteriSil(${id})" title="Sil"><i class="fas fa-trash"></i></button>
+        "data": "id", "className": "text-center", "render": (id, t, r) => `
+        <div class="btn-group shadow-sm rounded-pill overflow-hidden bg-white">
+        <button class="btn btn-sm btn-white text-success border-end px-2" onclick="hizliTahsilatAc(${id}, '${r.adSoyad}')" title="Tahsilat Al"><i class="fas fa-lira-sign"></i></button>
+        <button class="btn btn-sm btn-white text-warning border-end px-2" onclick="musteriDuzenle(${id})"><i class="fas fa-pencil-alt"></i></button>
+        <button class="btn btn-sm btn-white text-danger px-2" onclick="musteriSil(${id})"><i class="fas fa-trash"></i></button>
         </div>`
         }
         ],
         "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/tr.json" }
         });
 
-        $('#chkAll').click(function() { $('.chkMusteri').prop('checked', this.checked); checkCount(); });
+        $('#chkAll').click(function () { $('.chkMusteri').prop('checked', this.checked); checkCount(); });
+        });
 
-        $('#frmMusteri').submit(function (e) {
-        e.preventDefault();
-        $.post('/Musteri/Kaydet', $(this).serialize(), function (res) {
+        // HIZLI TAHSİLAT: Borç bilgisini çekip otomatik yazar
+        function hizliTahsilatAc(id, ad) {
+        $('#ht_MusteriId').val(id);
+        $('#ht_MusteriAd').text(ad);
+        $('#ht_BakiyeBilgi').text("Bakiye sorgulanıyor...");
+        $('#ht_Tutar').val("");
+
+        // GetFullDetay metodundan güncel borç/bakiye verisini alıyoruz
+        $.get('/Musteri/GetFullDetay/' + id, function (res) {
         if (res.success) {
-        $('#mdlMusteri').modal('hide');
+        let bakiye = parseFloat(res.kalanBakiye || 0);
+        if (bakiye > 0) {
+        $('#ht_Tutar').val(bakiye.toFixed(2));
+        $('#ht_BakiyeBilgi').html(`<i class="fas fa-info-circle me-1"></i>Bekleyen Ödeme: <b>₺${bakiye.toLocaleString('tr-TR')}</b>`);
+        } else {
+        $('#ht_Tutar').val("");
+        $('#ht_BakiyeBilgi').text("Müşterinin bekleyen borcu bulunmuyor.");
+        }
+        }
+        $('#mdlHizliTahsilat').modal('show');
+        });
+        }
+
+        function tahsilatKaydet() {
+        let data = { musteriId: $('#ht_MusteriId').val(), tutar: $('#ht_Tutar').val(), yontem: $('#ht_Yontem').val() };
+        if (!data.tutar || data.tutar <= 0) { Swal.fire("Uyarı", "Geçerli bir tutar girin.", "warning"); return; }
+        $.post('/Musteri/HizliTahsilat', data, function (res) {
+        if (res.success) {
+        $('#mdlHizliTahsilat').modal('hide');
         table.ajax.reload(null, false);
-        Swal.fire({ icon: 'success', title: 'Başarılı', showConfirmButton: false, timer: 1500 });
-        } else { Swal.fire('Hata', res.message, 'error'); }
-        });
-        });
-        });
-
-        function checkCount() {
-        let count = $(".chkMusteri:checked").length;
-        $('#selectedCount, #spnSeciliSayisi').text(count);
+        Swal.fire("Başarılı", "Tahsilat sisteme işlendi.", "success");
         }
-
-        // --- CİHAZ GÖRSEL YÜKLEME ---
-        function gorselSecModal(id) {
-        $('#hdnGorselCihazId').val(id);
-        $('#fileCihazGorsel').val('');
-        $('#mdlGorselYukle').modal('show');
-        }
-
-        function cihazGorselKaydet() {
-        let id = $('#hdnGorselCihazId').val();
-        let fileInput = document.getElementById('fileCihazGorsel');
-        let file = fileInput.files[0];
-
-        if (!file) { Swal.fire("Uyarı", "Lütfen bir fotoğraf seçin.", "warning"); return; }
-
-        let formData = new FormData();
-        formData.append("CihazId", id);
-        formData.append("Gorsel", file);
-
-        Swal.fire({ title: 'Fotoğraf Yükleniyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-
-        $.ajax({
-        url: '/Musteri/CihazGorselYukle',
-        type: 'POST',
-        data: formData,
-        contentType: false,
-        processData: false,
-        success: function (res) {
-        Swal.close();
-        if (res.success) {
-        Swal.fire({ icon: 'success', title: 'Başarılı', text: 'Görsel güncellendi.', showConfirmButton: false, timer: 1500 });
-        $('#mdlGorselYukle').modal('hide');
-        fullDetayGetir($('#hdnAktifMusteriId').val()); // Ana modalı tazele
-        } else { Swal.fire("Hata", res.message, "error"); }
-        },
-        error: function() { Swal.close(); Swal.fire("Hata", "Dosya yüklenirken bir sorun oluştu.", "error"); }
         });
         }
 
-        // --- KOMUTA MERKEZİ (DETAYLAR) ---
+        // FULL DETAY
         function fullDetayGetir(id) {
         $.get('/Musteri/GetFullDetay/' + id, function (res) {
         if (res.success) {
         let m = res.musteri;
         $('#hdnAktifMusteriId').val(m.id);
         $('#fd_AdSoyad').text(m.adSoyad);
-        $('#fd_Firma').text(m.firmaAdi || "Bireysel Müşteri");
-        $('#fd_Ciro').text(`Ciro: ₺${res.toplamCiro.toLocaleString('tr-TR', {minimumFractionDigits: 2})}`);
-        $('#fd_Tel').text(m.telefon);
-        $('#fd_Mail').text(m.eposta || "E-Posta Yok");
-        $('#fd_Kayit').text(m.kayitTarihi);
+        $('#fd_Firma').text(m.firmaAdi || "Bireysel");
+        $('#fd_Ciro').text(`₺${res.toplamCiro.toLocaleString('tr-TR')}`);
+        $('#fd_Tel').text(m.telefon); $('#fd_Mail').text(m.eposta || "-");
 
-        $('#btnIslemTekrari').attr('onclick', `islemTekrariModal(${m.id}, '${m.adSoyad.replace(/'/g, "\\'")}')`);
-
-        // Finans
         let fHtm = "";
-        res.finans.forEach(f => {
-        fHtm += `<tr><td>${f.tarih}</td><td>${f.islemTipi}</td><td class="text-end fw-bold text-success">₺${f.tutar.toLocaleString('tr-TR')}</td></tr>`;
-        });
-        $('#lstFinans').html(fHtm || "<tr><td colspan='3' class='text-center text-muted'>Finansal kayıt yok.</td></tr>");
+        res.finans.forEach(f => { fHtm += `<tr><td>${f.tarih}</td><td>${f.islemTipi}</td><td class="text-end fw-bold text-success">₺${parseFloat(f.tutar).toLocaleString('tr-TR')}</td></tr>`; });
+        $('#lstFinans').html(fHtm || "<tr><td colspan='3' class='text-center py-3'>Hareket yok.</td></tr>");
 
-        // Cihazlar (Görsel Kartları)
-        let cOpts = "";
         let cHtm = "";
-        res.cihazlar.forEach(c => {
-        let imgPath = (c.gorselYolu && c.gorselYolu !== "") ? c.gorselYolu : 'https://placehold.co/300x200?text=Foto%C4%9Fraf+Yok';
-        cHtm += `
-        <div class="col-md-6">
-        <div class="card h-100 shadow-sm border-0 bg-light rounded-3 overflow-hidden">
-        <div class="bg-white p-2 d-flex align-items-center justify-content-center" style="height: 120px;">
-        <img src="${imgPath}" class="img-fluid rounded" style="max-height: 100%; object-fit: contain;">
-        </div>
-        <div class="card-body p-2 text-center border-top">
-        <div class="fw-bold small text-truncate">${c.marka} ${c.model}</div>
-        <div class="text-muted extra-small mb-2">SN: ${c.seriNo}</div>
-        <button class="btn btn-outline-primary btn-sm w-100 py-0 extra-small rounded-pill" onclick="gorselSecModal(${c.id})">
-        <i class="fas fa-camera me-1"></i>Fotoğraf Değiştir
-        </button>
-        </div>
-        </div>
-        </div>`;
-        cOpts += `<option value="${c.id}">${c.marka} ${c.model} (SN: ${c.seriNo})</option>`;
-        });
-        $('#lstCihazlar').html(cHtm || "<div class='col-12 text-center text-muted p-3'>Cihaz kaydı bulunamadı.</div>");
-        $('#ddlTekrarCihaz').html(cOpts || "<option value=''>Cihaz Yok</option>");
+        res.cihazlar.forEach(c => { cHtm += `<div class="col-6 p-1"><div class="p-2 border rounded-3 bg-white text-center fw-bold small text-dark">${c.marka} ${c.model}</div></div>`; });
+        $('#lstCihazlar').html(cHtm || "<div class='p-3 text-muted'>Cihaz kaydı yok.</div>");
 
-        // Notlar
         let nHtm = "";
-        res.notlar.forEach(n => {
-        nHtm += `<div class="list-group-item small border-0 border-bottom bg-transparent"><b>${n.tarih}:</b> ${n.notIcerigi}</div>`;
-        });
-        $('#lstNotlar').html(nHtm || "<div class='p-3 text-muted small'>Henüz bir not eklenmemiş.</div>");
-
-        // Tarihçe
-        let lHtm = "";
-        res.loglar.forEach(l => {
-        lHtm += `<tr><td><small>${l.tarih}</small></td><td><b>${l.islemTipi}:</b> ${l.aciklama}</td></tr>`;
-        });
-        $('#lstLoglar').html(lHtm || "<tr><td class='text-muted small'>Kayıtlı işlem geçmişi yok.</td></tr>");
+        res.notlar.forEach(n => { nHtm += `<div class="list-group-item bg-light border-0 rounded-3 mb-2 small text-dark"><b>${n.tarih}:</b> ${n.notIcerigi}</div>`; });
+        $('#lstNotlar').html(nHtm || "<div class='text-muted small'>Not bulunmuyor.</div>");
 
         $('#mdlFullDetay').modal('show');
-        } else { Swal.fire("Hata", res.message, "error"); }
+        }
         });
         }
 
-        // --- TOPLU İŞLEMLER ---
-        function topluIslemAc(tip) {
-        let count = $(".chkMusteri:checked").length;
-        if (count === 0) { Swal.fire("Uyarı", "Lütfen işlem yapmak için müşteri seçin!", "warning"); return; }
-        seciliIslemTipi = tip;
-        $('#txtTopluKonu, #txtTopluMesaj').val('');
-        $('#divTeknisyenSecimi').toggleClass('d-none', tip !== 'isEmri');
-        $('#topluIslemBaslik').text(tip === 'isEmri' ? 'Toplu İş Emri / Görev Atama' : 'Toplu Gerçek E-Posta Gönderimi');
-        $('#mdlTopluIslem').modal('show');
-        }
-
-        function topluIslemiTamamla() {
-        let idler = [];
-        $(".chkMusteri:checked").each(function () { idler.push(parseInt($(this).val())); });
-        let url = seciliIslemTipi === 'mail' ? '/Iletisim/MesajGonder' : '/Iletisim/TopluIsEmriAtay';
-
-        let data = {
-        HedefIdler: idler,
-        MusteriIdler: idler,
-        Konu: $('#txtTopluKonu').val(),
-        Mesaj: $('#txtTopluMesaj').val(),
-        TeknisyenId: $('#ddlTopluTeknisyen').val()
-        };
-
-        Swal.fire({ title: 'İşlem Başlatılıyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-        $.post(url, data, function (res) {
-        Swal.close();
-        if (res.success) {
-        Swal.fire("Başarılı", res.message, "success");
-        $('#mdlTopluIslem').modal('hide');
-        $('.chkMusteri, #chkAll').prop('checked', false);
-        checkCount();
-        table.ajax.reload(null, false);
-        } else { Swal.fire("Hata", res.message, "error"); }
-        });
-        }
-
-        function tekilMailAc() {
+        // SERVİS BAŞLAT
+        function islemTekrariModalPopup() {
         let id = $('#hdnAktifMusteriId').val();
-        $('.chkMusteri').prop('checked', false);
-        $(`.chkMusteri[value="${id}"]`).prop('checked', true);
-        checkCount();
-        topluIslemAc('mail');
-        }
-
-        // --- DİĞER İŞLEMLER ---
-        function musteriyeNotEkle() {
-        let id = $('#hdnAktifMusteriId').val();
-        let not = $('#txtYeniNot').val();
-        if(!not) { Swal.fire("Uyarı", "Boş not eklenemez.", "warning"); return; }
-        $.post('/Musteri/NotEkle', { MusteriId: id, NotIcerigi: not }, function(res) {
-        if(res.success) { $('#txtYeniNot').val(''); fullDetayGetir(id); }
-        });
-        }
-
-        function islemTekrariModal(id, ad) {
         $('#hdnIslemMusteriId').val(id);
-        $('#txtIslemMusteriAd').val(ad);
-        $('#txtServisAciklama').val('');
+        $.get('/Musteri/GetFullDetay/' + id, function(res) {
+        let opts = ""; res.cihazlar.forEach(c => { opts += `<option value="${c.id}">${c.marka} ${c.model}</option>`; });
+        $('#ddlTekrarCihaz').html(opts || "<option value=''>Cihaz Bulunmuyor</option>");
         $('#mdlIslemTekrari').modal('show');
+        });
         }
 
         function islemTekrariniKaydet() {
@@ -483,101 +355,97 @@
         CihazId: $('#ddlTekrarCihaz').val(),
         SikayetAciklamasi: $('#txtServisAciklama').val()
         };
-        if(!data.CihazId || !data.SikayetAciklamasi) { Swal.fire("Hata", "Lütfen cihaz ve açıklama girin.", "error"); return; }
-        $.post('/ServisKayit/HizliServisKaydiAc', data, function(res) {
-        if(res.success) {
-        Swal.fire("Başarılı", "İş emri açıldı: " + res.servisNo, "success");
+        if(!data.CihazId) { Swal.fire("Hata", "Önce cihaz eklenmelidir.", "error"); return; }
+        $.post('/Musteri/HizliServisKaydiAc', data, function (res) {
+        if (res.success) {
         $('#mdlIslemTekrari').modal('hide');
-        } else { Swal.fire("Hata", res.message, "error"); }
+        Swal.fire("Başarılı", "İş Emri Oluşturuldu.", "success");
+        }
         });
         }
 
-        function yeniMusteriModal() {
-        $('#frmMusteri')[0].reset();
-        $('#txtId').val(0);
-        $('#modalBaslik').html('<i class="fas fa-user-plus me-2"></i>Yeni Müşteri Kaydı');
-        $('#mdlMusteri').modal('show');
-        }
-
+        // STANDARTLAR
+        function yeniMusteriModal() { $('#frmMusteri')[0].reset(); $('#txtId').val(0); $('#modalBaslik').text("Yeni Müşteri Ekle"); $('#mdlMusteri').modal('show'); }
         function musteriDuzenle(id) {
         $.get('/Musteri/GetMusteri/' + id, function (res) {
         if (res.musteri) {
         let m = res.musteri;
         $('#txtId').val(m.id); $('#txtAd').val(m.ad); $('#txtSoyad').val(m.soyad);
-        $('#txtFirmaAdi').val(m.firmaAdi); $('#txtTelefon').val(m.telefon); $('#txtEposta').val(m.eposta);
-        $('#txtAcikAdres').val(res.adres ? res.adres.acikAdres : '');
-        $('#ddlMusteriTip').val(m.musteriTipId); $('#ddlMusteriDurum').val(m.musteriDurumId);
-        $('#modalBaslik').html('<i class="fas fa-user-edit me-2"></i>Müşteri Bilgilerini Güncelle');
-        $('#mdlMusteri').modal('show');
+        $('#txtFirmaAdi').val(m.firmaAdi); $('#txtTelefon').val(m.telefon);
+        $('#txtEposta').val(m.eposta); $('#ddlMusteriTip').val(m.musteriTipId);
+        $('#ddlMusteriDurum').val(m.musteriDurumId);
+        if (res.adres) $('#txtAcikAdres').val(res.adres.acikAdres);
+        $('#modalBaslik').text("Müşteri Düzenle"); $('#mdlMusteri').modal('show');
         }
         });
+        }
+        function musteriSil(id) {
+        Swal.fire({ title: 'Silinsin mi?', icon: 'warning', showCancelButton: true }).then((r) => { if (r.isConfirmed) $.post('/Musteri/Sil/' + id, function () { table.ajax.reload(); }); });
+        }
+        function checkCount() { $('#selectedCount').text($(".chkMusteri:checked").length); }
+        function musteriyeNotEkle() {
+        let id = $('#hdnAktifMusteriId').val();
+        let not = $('#txtYeniNot').val();
+        if (!not) return;
+        $.post('/Musteri/NotEkle', { MusteriId: id, NotIcerigi: not }, function (res) { if (res.success) { $('#txtYeniNot').val(''); fullDetayGetir(id); } });
         }
 
-        function musteriSil(id) {
-        Swal.fire({
-        title: 'Emin misiniz?',
-        text: "Müşteri pasif duruma alınacak!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        confirmButtonText: 'Evet, Sil!',
-        cancelButtonText: 'Vazgeç'
-        }).then((result) => {
-        if (result.isConfirmed) {
-        $.post('/Musteri/Sil/' + id, function(res) {
-        if(res.success) { table.ajax.reload(null, false); Swal.fire('Silindi!', 'Müşteri başarıyla silindi.', 'success'); }
+        // TOPLU İŞLEM
+        function topluIslemAc(tip) {
+        if ($(".chkMusteri:checked").length === 0) { Swal.fire("Uyarı", "Müşteri seçmelisiniz.", "warning"); return; }
+        seciliIslemTipi = tip;
+        $('#divTeknisyenSecimi').toggleClass('d-none', tip !== 'isEmri');
+        $('#topluIslemBaslik').text(tip === 'mail' ? "Toplu Mail Gönderimi" : "Toplu İş Emri Ata");
+        $('#mdlTopluIslem').modal('show');
+        }
+        function topluIslemiTamamla() {
+        let idler = []; $(".chkMusteri:checked").each(function(){ idler.push(parseInt($(this).val())); });
+        let data = { HedefIdler: idler, Konu: $('#txtTopluKonu').val(), Mesaj: $('#txtTopluMesaj').val(), TeknisyenId: $('#ddlTopluTeknisyen').val() };
+        $.post(seciliIslemTipi === 'mail' ? '/Iletisim/MesajGonder' : '/Iletisim/TopluIsEmriAtay', data, function (res) {
+        if (res.success) { $('#mdlTopluIslem').modal('hide'); Swal.fire("Başarılı", "İşlem tamamlandı.", "success"); }
         });
         }
-        });
+        function tekilMailAc() {
+        let id = $('#hdnAktifMusteriId').val();
+        $('.chkMusteri').prop('checked', false);
+        $(`.chkMusteri[value="${id}"]`).prop('checked', true);
+        topluIslemAc('mail');
         }
     </script>
 
     <style>
-        /* Tasarım İyileştirmeleri */
         .bg-soft-primary {
-        background-color: rgba(59, 130, 246, 0.1);
+        background: rgba(59, 130, 246, 0.1);
         color: #3b82f6;
         }
 
-        .action-btn {
-        width: 32px;
-        height: 32px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
+        .btn-white {
+        background: #fff;
+        border: 1px solid #eee;
         }
 
-        .action-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        .btn-white:hover {
+        background: #f9fafb;
+        color: #333;
         }
 
-        .nav-pills .nav-link.active {
-        background-color: #3b82f6;
-        color: white;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        .cursor-pointer {
+        cursor: pointer;
         }
 
-        .nav-pills .nav-link {
-        color: #64748b;
+        .nav-tabs .nav-link.active {
+        background: #fff !important;
+        color: #3b82f6 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        .extra-small {
-        font-size: 0.75rem;
+        ::-webkit-scrollbar {
+        width: 5px;
         }
 
-        .card-img-top {
-        background-color: #f8f9fa;
-        }
-
-        .list-group-item:hover {
-        background-color: #f8fafc;
-        }
-        /* Tooltip benzeri stil */
-        .text-truncate {
-        max-width: 100%;
-        display: inline-block;
+        ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
         }
     </style>
 }

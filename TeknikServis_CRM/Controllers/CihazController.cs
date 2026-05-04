@@ -70,7 +70,7 @@ namespace TeknikServis_CRM.Controllers
         {
             try
             {
-                ModelState.Clear(); // Validasyon hatalarını temizle
+                if (cihazInput.MusteriId == 0) return Json(new { success = false, message = "Lütfen bir müşteri seçin." });
 
                 if (cihazInput.Id == 0)
                 {
@@ -88,6 +88,7 @@ namespace TeknikServis_CRM.Controllers
                     ent.Marka = cihazInput.Marka;
                     ent.Model = cihazInput.Model;
                     ent.SeriNo = cihazInput.SeriNo;
+                    ent.AktifMi = true;
                 }
 
                 await _context.SaveChangesAsync();
@@ -95,9 +96,7 @@ namespace TeknikServis_CRM.Controllers
             }
             catch (Exception ex)
             {
-                // SQL hatasını tam görmek için InnerException'ı döndürüyoruz
-                var detayHata = ex.InnerException?.Message ?? ex.Message;
-                return Json(new { success = false, message = "Hata: " + detayHata });
+                return Json(new { success = false, message = "Hata: " + (ex.InnerException?.Message ?? ex.Message) });
             }
         }
 

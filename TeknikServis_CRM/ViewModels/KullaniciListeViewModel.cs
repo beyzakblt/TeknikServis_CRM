@@ -1,4 +1,5 @@
-﻿namespace TeknikServis_CRM.Models
+﻿using System;
+namespace TeknikServis_CRM.ViewModels
 {
     public class KullaniciListeViewModel
     {

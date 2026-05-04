@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Finans & Raporlama Paneli";
+    ViewData["Title"] = "Finans & Bakiye Yönetimi";
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -21,7 +21,6 @@
         font-family: 'Inter', sans-serif;
     }
 
-    /* Kart Tasarımları */
     .card-main {
         border: none;
         border-radius: 25px;
@@ -42,51 +41,17 @@
             transform: translateY(-5px);
         }
 
-    /* Slider Okları */
-    .carousel-control-prev, .carousel-control-next {
-        width: 5%;
-        filter: invert(0.5);
-    }
-
     .chart-container {
         position: relative;
         height: 320px;
         width: 100%;
     }
 
-    .report-btn {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        padding: 15px;
-        background: #fff;
-        border: 1px solid #eee;
-        border-radius: 15px;
-        text-decoration: none !important;
-        transition: 0.3s;
-    }
-
-        .report-btn:hover {
-            transform: translateY(-3px);
-            border-color: var(--primary);
-            background: var(--light-bg);
-        }
-
-    .report-icon {
-        width: 45px;
-        height: 45px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Tablo */
     .table-pro thead th {
         background-color: #f8fafc;
         text-transform: uppercase;
         font-size: 0.7rem;
-        color: var(--secondary);
+        color: #858796;
         padding: 18px 20px;
         font-weight: 800;
         border: none;
@@ -96,22 +61,20 @@
         padding: 15px 20px;
         border-bottom: 1px solid #eff2f7;
     }
-
-    .row-clickable:hover {
-        background-color: #fcfdfe !important;
-        cursor: pointer;
-    }
 </style>
 
 <div class="container-fluid mt-4 px-md-5">
     <div class="row align-items-center mb-4">
         <div class="col-md-6">
-            <h2 class="h3 mb-1 text-gray-800 fw-bold"><i class="fas fa-chart-pie text-primary me-2"></i>Finansal Analiz Paneli</h2>
-            <p class="text-muted small fw-bold">Slider Destekli Görsel Raporlama & Kasa Takibi</p>
+            <h2 class="h3 mb-1 text-gray-800 fw-bold"><i class="fas fa-wallet text-primary me-2"></i>Kasa & Bakiye Takibi</h2>
+            <p class="text-muted small fw-bold">Gelir/Gider Dengesi ve Net Bakiye Yönetimi</p>
         </div>
-        <div class="col-md-6 text-md-end">
-            <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" onclick="yeniTahsilatModal()">
-                <i class="fas fa-plus-circle me-1"></i> Yeni Tahsilat
+        <div class="col-md-6 text-md-end d-flex justify-content-end gap-2">
+            <button class="btn btn-danger rounded-pill px-4 shadow-sm fw-bold" onclick="yeniIslemModal('Gider')">
+                <i class="fas fa-minus-circle me-1"></i> Gider Ekle
+            </button>
+            <button class="btn btn-success rounded-pill px-4 shadow-sm fw-bold" onclick="yeniIslemModal('Gelir')">
+                <i class="fas fa-plus-circle me-1"></i> Gelir / Bakiye Ekle
             </button>
         </div>
     </div>
@@ -120,49 +83,44 @@
         <div class="col-xl-8">
             <div class="card card-main overflow-hidden border-0">
                 <div class="card-body p-4">
-                    <div id="financeCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+                    <div id="financeCarousel" class="carousel slide" data-bs-ride="carousel">
                         <div class="carousel-inner">
                             <div class="carousel-item active">
-                                <h6 class="text-center fw-bold text-primary mb-3">İşlem Tipine Göre Kazanç Akışı</h6>
+                                <h6 class="text-center fw-bold text-primary mb-3">Finansal Dağılım Özeti</h6>
                                 <div class="chart-container"><canvas id="chartIslem"></canvas></div>
                             </div>
                             <div class="carousel-item">
-                                <h6 class="text-center fw-bold text-success mb-3">Ödeme Yöntemi Tercihleri</h6>
+                                <h6 class="text-center fw-bold text-success mb-3">Ödeme Kanalları</h6>
                                 <div class="chart-container"><canvas id="chartYontem"></canvas></div>
                             </div>
-                            <div class="carousel-item">
-                                <h6 class="text-center fw-bold text-info mb-3">Cihaz Markası Servis Oranları</h6>
-                                <div class="chart-container"><canvas id="chartCihaz"></canvas></div>
-                            </div>
                         </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#financeCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon"></span></button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#financeCarousel" data-bs-slide="next"><span class="carousel-control-next-icon"></span></button>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#financeCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon" style="filter:invert(1)"></span></button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#financeCarousel" data-bs-slide="next"><span class="carousel-control-next-icon" style="filter:invert(1)"></span></button>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-xl-4">
             <div class="d-flex flex-column gap-3 h-100">
-                <a href="/Finans/ExcelIndir" class="report-btn shadow-sm">
-                    <div class="report-icon bg-success text-white shadow-sm"><i class="fas fa-file-excel"></i></div>
-                    <div><div class="fw-bold text-dark">Excel Raporu Al</div><div class="small text-muted">Tüm dökümü indir</div></div>
-                </a>
                 <div class="stat-card-pro flex-fill" style="border-left-color: var(--success);">
-                    <div class="text-xs fw-bold text-success text-uppercase mb-1 small">Toplam Bakiye</div>
+                    <div class="text-xs fw-bold text-success text-uppercase mb-1 small">Net Kasa Bakiyesi</div>
                     <div class="h3 mb-0 fw-bold text-gray-800">₺<span id="totalIncome">0,00</span></div>
                 </div>
-                <div class="stat-card-pro flex-fill" style="border-left-color: var(--primary);">
-                    <div class="text-xs fw-bold text-primary text-uppercase mb-1 small">Bugünkü Tahsilat</div>
-                    <div class="h3 mb-0 fw-bold text-gray-800">₺<span id="todayIncome">0,00</span></div>
+                <div class="stat-card-pro flex-fill" style="border-left-color: var(--danger);">
+                    <div class="text-xs fw-bold text-danger text-uppercase mb-1 small">Toplam Gider</div>
+                    <div class="h3 mb-0 fw-bold text-gray-800">₺<span id="totalExpense">0,00</span></div>
                 </div>
+                <a href="/Finans/ExcelIndir" class="btn btn-white border rounded-4 p-3 fw-bold shadow-sm text-dark">
+                    <i class="fas fa-file-excel text-success me-2"></i> Excel Dökümü Al
+                </a>
             </div>
         </div>
     </div>
 
     <div class="card card-main border-0">
         <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center px-4">
-            <h6 class="m-0 fw-bold text-primary">Güncel Kasa Hareketleri</h6>
-            <input type="text" id="financeSearch" class="form-control form-control-sm rounded-pill bg-light border-0 px-3 shadow-sm" style="width:220px" placeholder="Filtrele...">
+            <h6 class="m-0 fw-bold text-primary">Kasa Hareket Dökümü</h6>
+            <input type="text" id="financeSearch" class="form-control form-control-sm rounded-pill bg-light border-0 px-3" style="width:220px" placeholder="Ara...">
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -170,11 +128,11 @@
                     <thead>
                         <tr>
                             <th>Tarih</th>
-                            <th>Müşteri / Cari</th>
+                            <th>Açıklama / Cari</th>
                             <th>Yöntem</th>
-                            <th>İşlem Tipi</th>
+                            <th>Tür</th>
                             <th class="text-end">Tutar</th>
-                            <th class="text-center" style="width:100px">İşlem</th>
+                            <th class="text-center">İşlem</th>
                         </tr>
                     </thead>
                     <tbody class="small"></tbody>
@@ -188,13 +146,13 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content card-main p-3">
             <form id="frmTahsilat">
-                <div class="modal-header border-0"><h5 class="fw-bold text-primary">Yeni Tahsilat Girişi</h5></div>
+                <div class="modal-header border-0"><h5 class="fw-bold" id="modalTitle">İşlem Girişi</h5></div>
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="small fw-bold">Müşteri / Cari</label>
-                            <select name="MusteriId" id="ddlMusteri" class="form-select rounded-3 shadow-sm" required>
-                                <option value="">-- Cari Seçiniz --</option>
+                            <label class="small fw-bold">İlgili Cari / Müşteri (Opsiyonel)</label>
+                            <select name="MusteriId" id="ddlMusteri" class="form-select rounded-3 shadow-sm">
+                                <option value="">-- Genel Cari --</option>
                                 @foreach (var m in ViewBag.Musteriler)
                                 {
                                     <option value="@m.Id">@m.AdSoyad</option>
@@ -202,11 +160,11 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="small fw-bold">Tutar (₺)</label>
-                            <input type="number" name="Tutar" class="form-control rounded-3 fw-bold shadow-sm" step="0.01" required>
+                            <label class="small fw-bold">Miktar (₺)</label>
+                            <input type="number" name="Tutar" id="txtTutar" class="form-control rounded-3 fw-bold shadow-sm" step="0.01" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="small fw-bold">Ödeme Yöntemi</label>
+                            <label class="small fw-bold">Ödeme Kanalı</label>
                             <select name="OdemeYontemi" class="form-select rounded-3 shadow-sm">
                                 <option value="Nakit">Nakit</option>
                                 <option value="Kredi Kartı">Kredi Kartı</option>
@@ -214,13 +172,24 @@
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="small fw-bold">İşlem Notu</label>
-                            <input type="text" name="IslemTipi" class="form-control rounded-3 shadow-sm" placeholder="Örn: Anakart Onarım Ücreti">
+                            <label class="small fw-bold">İşlem Kategorisi / Notu</label>
+                            <select name="IslemTipi" id="ddlIslemTipi" class="form-select rounded-3 shadow-sm" required>
+                                <optgroup label="GELİR / BAKİYE" id="optGelir">
+                                    <option value="Gelir">Servis Tahsilatı</option>
+                                    <option value="Bakiye">Sermaye Girişi / Bakiye</option>
+                                </optgroup>
+                                <optgroup label="GİDERLER" id="optGider">
+                                    <option value="Gider">Dükkan Kirası / Fatura</option>
+                                    <option value="Gider">Yedek Parça Alımı</option>
+                                    <option value="Gider">Personel / Maaş</option>
+                                    <option value="Gider">Yemek / Yol / Diğer</option>
+                                </optgroup>
+                            </select>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow">Kaydet ve Kasaya İşle</button>
+                    <button type="submit" id="btnSubmit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow">Kasaya İşle</button>
                 </div>
             </form>
         </div>
@@ -241,25 +210,39 @@
         table = $('#tblKasa').DataTable({
         "ajax": { "url": "/Finans/GetKasaListesi", "dataSrc": "" },
         "columns": [
-        { "data": "tarih", "render": d => `<span class="text-muted small fw-bold">${d}</span>` },
-        { "data": "musteriAd", "defaultContent": "Genel Cari" },
-        { "data": "odemeYontemi", "render": d => `<span class="badge bg-light text-primary border border-primary px-3 rounded-pill">${d}</span>` },
-        { "data": "islemTipi", "render": d => `<span class="text-secondary small">${d || 'Genel Tahsilat'}</span>` },
-        { "data": "tutar", "className": "text-end", "render": d => `<span class="fw-bold text-dark">₺${parseFloat(d).toLocaleString('tr-TR', {minimumFractionDigits:2})}</span>` },
-        { "data": "id", "className": "text-center", "render": d => `<button class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="islemSil(event, ${d})"><i class="fas fa-trash"></i></button>` }
+        { "data": "tarih", "render": d => `<span class="text-muted fw-bold">${d}</span>` },
+        { "data": "musteriAd", "defaultContent": "Genel Kasa İşlemi" },
+        { "data": "odemeYontemi", "render": d => `<span class="badge bg-light text-primary border px-3 rounded-pill">${d}</span>` },
+        {
+        "data": "islemTipi",
+        "render": (d, t, row) => {
+        let isGider = row.tutar < 0;
+        return `<span class="badge ${isGider ? 'bg-soft-danger text-danger' : 'bg-soft-success text-success'} rounded-pill">${d || 'İşlem'}</span>`;
+        }
+        },
+        {
+        "data": "tutar",
+        "className": "text-end",
+        "render": d => {
+        let val = parseFloat(d);
+        let color = val < 0 ? 'text-danger' : 'text-success';
+        let sign = val < 0 ? '' : '+';
+        return `<span class="fw-bold ${color}">${sign}${val.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺</span>`;
+        }
+        },
+        { "data": "id", "className": "text-center", "render": d => `<button class="btn btn-sm text-danger" onclick="islemSil(event, ${d})"><i class="fas fa-trash"></i></button>` }
         ],
-        "createdRow": function(row, data) { $(row).addClass('row-clickable'); },
-        "initComplete": function(s, json) { calculateTotals(json); initCharts(); },
         "order": [[0, "desc"]],
+        "initComplete": function (s, json) { calculateTotals(json); initCharts(); },
         "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/tr.json" }
         });
 
-        $('#financeSearch').keyup(function() { table.search($(this).val()).draw(); });
+        $('#financeSearch').keyup(function () { table.search($(this).val()).draw(); });
 
-        $('#frmTahsilat').submit(function(e) {
+        $('#frmTahsilat').submit(function (e) {
         e.preventDefault();
         $.post('/Finans/OdemeAl', $(this).serialize(), r => {
-        if(r.success) {
+        if (r.success) {
         $('#mdlTahsilat').modal('hide');
         table.ajax.reload(j => { calculateTotals(j); initCharts(); });
         Swal.fire('Başarılı', 'İşlem kasaya yansıdı.', 'success');
@@ -269,83 +252,77 @@
         });
 
         function calculateTotals(data) {
-        let total = data.reduce((a, b) => a + (parseFloat(b.tutar) || 0), 0);
-        $('#totalIncome').text(total.toLocaleString('tr-TR', {minimumFractionDigits: 2}));
-        let bugun = new Date().toLocaleDateString('tr-TR');
-        let todayTotal = data.filter(x => x.tarih.includes(bugun)).reduce((a, b) => a + (parseFloat(b.tutar) || 0), 0);
-        $('#todayIncome').text(todayTotal.toLocaleString('tr-TR', {minimumFractionDigits: 2}));
+        // Net Bakiye Hesabı
+        let net = data.reduce((a, b) => a + (parseFloat(b.tutar) || 0), 0);
+        $('#totalIncome').text(net.toLocaleString('tr-TR', { minimumFractionDigits: 2 }));
+
+        // Sadece Giderlerin Toplamı
+        let expense = data.filter(x => x.tutar < 0).reduce((a, b) => a + (parseFloat(b.tutar) || 0), 0);
+        $('#totalExpense').text(Math.abs(expense).toLocaleString('tr-TR', { minimumFractionDigits: 2 }));
+        }
+
+        function yeniIslemModal(tip) {
+        $('#frmTahsilat')[0].reset();
+        const isGider = tip === 'Gider';
+
+        $('#modalTitle').text(isGider ? 'Yeni Gider Girişi' : 'Yeni Gelir / Bakiye Girişi');
+        $('#modalTitle').removeClass('text-success text-danger').addClass(isGider ? 'text-danger' : 'text-success');
+        $('#btnSubmit').removeClass('btn-primary btn-danger btn-success').addClass(isGider ? 'btn-danger' : 'btn-success');
+
+        // Kategorileri kısıtla
+        if (isGider) {
+        $('#optGelir').hide(); $('#optGider').show();
+        $('#ddlIslemTipi').val('Gider');
+        } else {
+        $('#optGelir').show(); $('#optGider').hide();
+        $('#ddlIslemTipi').val('Gelir');
+        }
+
+        $('#mdlTahsilat').modal('show');
         }
 
         function initCharts() {
         $.get('/Finans/GetFinansOzetGrafik', function (res) {
-        const palette = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#6610f2', '#fd7e14'];
-
-        // 1. Kazanç Akışı (Line/Area Chart)
-        if(charts.islem) charts.islem.destroy();
-        charts.islem = new Chart(document.getElementById('chartIslem').getContext('2d'), {
-        type: 'line',
+        if (charts.islem) charts.islem.destroy();
+        charts.islem = new Chart(document.getElementById('chartIslem'), {
+        type: 'bar',
         data: {
-        labels: res.islemler.length ? res.islemler.map(x => x.etiket) : ['Veri Yok'],
+        labels: res.islemler.map(x => x.etiket),
         datasets: [{
-        label: '₺',
-        data: res.islemler.length ? res.islemler.map(x => x.toplam) : [0],
-        fill: true,
-        backgroundColor: 'rgba(78, 115, 223, 0.1)',
-        borderColor: '#4e73df',
-        borderWidth: 3,
-        tension: 0.4,
-        pointRadius: 4
-        }]
-        },
-        options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-        });
-
-        // 2. Ödeme Yöntemleri (Doughnut)
-        if(charts.yontem) charts.yontem.destroy();
-        charts.yontem = new Chart(document.getElementById('chartYontem').getContext('2d'), {
-        type: 'doughnut',
-        data: {
-        labels: res.yontemler.length ? res.yontemler.map(x => x.etiket) : ['Veri Yok'],
-        datasets: [{
-        data: res.yontemler.length ? res.yontemler.map(x => x.toplam) : [1],
-        backgroundColor: palette,
-        hoverOffset: 10
-        }]
-        },
-        options: { maintainAspectRatio: false, cutout: '75%' }
-        });
-
-        // 3. Cihaz Markaları (Pie)
-        if(charts.cihaz) charts.cihaz.destroy();
-        charts.cihaz = new Chart(document.getElementById('chartCihaz').getContext('2d'), {
-        type: 'pie',
-        data: {
-        labels: res.cihazlar.length ? res.cihazlar.map(x => x.etiket) : ['Cihaz Kaydı Yok'],
-        datasets: [{
-        data: res.cihazlar.length ? res.cihazlar.map(x => x.toplam) : [1],
-        backgroundColor: palette.reverse()
+        label: 'Hacim (₺)',
+        data: res.islemler.map(x => x.toplam),
+        backgroundColor: '#4e73df'
         }]
         },
         options: { maintainAspectRatio: false }
         });
+
+        if (charts.yontem) charts.yontem.destroy();
+        charts.yontem = new Chart(document.getElementById('chartYontem'), {
+        type: 'doughnut',
+        data: {
+        labels: res.yontemler.map(x => x.etiket),
+        datasets: [{
+        data: res.yontemler.map(x => x.toplam),
+        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc']
+        }]
+        },
+        options: { maintainAspectRatio: false, cutout: '70%' }
+        });
         });
         }
-
-        function yeniTahsilatModal() { $('#frmTahsilat')[0].reset(); $('#mdlTahsilat').modal('show'); }
 
         function islemSil(e, id) {
         e.stopPropagation();
         Swal.fire({
-        title: 'Silme Onayı',
-        text: "Bu finansal hareketi silmek istediğinize emin misiniz?",
+        title: 'Emin misiniz?',
+        text: "Bu finansal hareketi silmek kasayı etkileyecektir!",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#e74a3b',
         confirmButtonText: 'Evet, Sil'
         }).then(r => {
         if (r.isConfirmed) $.post('/Finans/KasaSil/' + id, () => {
         table.ajax.reload(j => { calculateTotals(j); initCharts(); });
-        Swal.fire('Silindi', 'Kasa hareketi silindi.', 'success');
         });
         });
         }

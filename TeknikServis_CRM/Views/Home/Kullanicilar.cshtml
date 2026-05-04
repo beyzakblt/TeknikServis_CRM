@@ -1,7 +1,8 @@
-﻿@model List<TeknikServis_CRM.Models.KullaniciListeViewModel>
+﻿@model List<TeknikServis_CRM.ViewModels.KullaniciListeViewModel>
+#nullable disable
 @{
     ViewData["Title"] = "Kullanıcı Yönetimi";
-    var rollerListesi = ViewBag.Roller as List<TeknikServis_CRM.Models.Roller> ?? new List<Roller>();
+    var rollerListesi = ViewBag.Roller as List<TeknikServis_CRM.Models.Roller> ?? new List<TeknikServis_CRM.Models.Roller>();
 }
 
 <style>
@@ -36,10 +37,6 @@
         border-color: #0d6efd;
         box-shadow: none;
         background-color: #fff !important;
-    }
-
-    .input-group-text {
-        cursor: pointer;
     }
 </style>
 
@@ -112,13 +109,13 @@
                     </tr>
                 </thead>
                 <tbody id="kullaniciTableBody">
-                    @if (Model != null && Model.Any())
+                    @if (Model != null)
                     {
                         foreach (var item in Model)
                         {
                             string initials = ((item.Ad?.Length > 0 ? item.Ad[0].ToString() : "") + (item.Soyad?.Length > 0 ? item.Soyad[0].ToString() : "")).ToUpper();
                             string durumClass = item.Durum == "Aktif" ? "success" : "danger";
-                            string anaRol = item.Roller.FirstOrDefault() ?? "Atanmamış";
+                            string anaRol = item.Roller?.FirstOrDefault() ?? "Atanmamış";
 
                             <tr data-durum="@item.Durum" data-rol="@anaRol">
                                 <td class="ps-4">
@@ -136,9 +133,12 @@
                                 </td>
                                 <td><span class="badge bg-@durumClass bg-opacity-10 text-@durumClass badge-soft">@item.Durum</span></td>
                                 <td>
-                                    @foreach (var rol in item.Roller)
+                                    @if (item.Roller != null)
                                     {
-                                        <span class="badge bg-dark bg-opacity-10 text-dark badge-soft me-1">@rol</span>
+                                        foreach (var rol in item.Roller)
+                                        {
+                                            <span class="badge bg-dark bg-opacity-10 text-dark badge-soft me-1">@rol</span>
+                                        }
                                     }
                                 </td>
                                 <td class="text-muted small">@(item.SonGiris.HasValue ? item.SonGiris.Value.ToString("dd.MM.yyyy HH:mm") : "Hiç Giriş Yapılmadı")</td>
@@ -176,7 +176,6 @@
                         <div class="col-md-6"><label class="form-label small fw-bold">Kullanıcı Adı</label><input type="text" name="KullaniciAdi" id="kKullaniciAdi" class="form-control rounded-3 border-0 bg-light px-3 py-2" required></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">E-Posta</label><input type="email" name="Eposta" id="kEposta" class="form-control rounded-3 border-0 bg-light px-3 py-2" required></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Telefon</label><input type="text" name="Telefon" id="kTelefon" class="form-control rounded-3 border-0 bg-light px-3 py-2"></div>
-
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Yetki Rolü</label>
                             <select name="SecilenRolId" id="kRol" class="form-select rounded-3 border-0 bg-light px-3 py-2" required>
@@ -187,27 +186,10 @@
                                 }
                             </select>
                         </div>
-
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Şifre</label>
-                            <div class="input-group">
-                                <input type="password" name="SifreInput" id="kSifre" class="form-control rounded-start-3 border-0 bg-light px-3 py-2" placeholder="••••••••">
-                                <span class="input-group-text border-0 bg-light rounded-end-3" onclick="togglePassword('kSifre')">
-                                    <i class="bi bi-eye-fill" id="kSifreIcon"></i>
-                                </span>
-                            </div>
+                            <input type="password" name="SifreInput" id="kSifre" class="form-control rounded-3 border-0 bg-light px-3 py-2">
                         </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Şifre Tekrar</label>
-                            <div class="input-group">
-                                <input type="password" id="kSifreTekrar" class="form-control rounded-start-3 border-0 bg-light px-3 py-2" placeholder="••••••••">
-                                <span class="input-group-text border-0 bg-light rounded-end-3" onclick="togglePassword('kSifreTekrar')">
-                                    <i class="bi bi-eye-fill" id="kSifreTekrarIcon"></i>
-                                </span>
-                            </div>
-                        </div>
-
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Durum</label>
                             <select name="Durum" id="kDurum" class="form-select rounded-3 border-0 bg-light px-3 py-2">
@@ -215,18 +197,11 @@
                                 <option value="Pasif">Pasif</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Onay Durumu</label>
-                            <div class="form-check form-switch mt-2">
-                                <input class="form-check-input" type="checkbox" name="IsOnayli" id="kIsOnayli" value="true" checked>
-                                <label class="form-check-label small" for="kIsOnayli">Hesap Onaylı/Aktif</label>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pb-4 px-4">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Kapat</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm" id="btnKaydet">Kaydet</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">Kaydet</button>
                 </div>
             </form>
         </div>
@@ -237,10 +212,7 @@
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
             <div class="modal-header border-0 pt-4 px-4 bg-light rounded-top-4">
-                <div>
-                    <h5 class="fw-bold mb-0">Personel Görev Takibi</h5>
-                    <small class="text-muted" id="isYukuPersonelAd"></small>
-                </div>
+                <h5 class="fw-bold mb-0">Personel Görev Takibi</h5>
                 <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
@@ -258,10 +230,6 @@
                         <tbody id="isYukuTableBody"></tbody>
                     </table>
                 </div>
-                <div id="noIsYukuAlert" class="text-center py-5 d-none">
-                    <i class="bi bi-check2-circle display-4 text-success"></i>
-                    <p class="mt-3 fw-bold">Bu personele atanmış aktif bir görev bulunamadı.</p>
-                </div>
             </div>
         </div>
     </div>
@@ -270,18 +238,6 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        function togglePassword(id) {
-        const input = $("#" + id);
-        const icon = $("#" + id + "Icon");
-        if (input.attr("type") === "password") {
-        input.attr("type", "text");
-        icon.removeClass("bi-eye-fill").addClass("bi-eye-slash-fill");
-        } else {
-        input.attr("type", "password");
-        icon.removeClass("bi-eye-slash-fill").addClass("bi-eye-fill");
-        }
-        }
-
         function loadKullanicilar() {
         let ara = $("#txtAra").val().toLowerCase();
         let durum = $("#filterDurum").val();
@@ -292,7 +248,7 @@
         let metinUygun = metin.indexOf(ara) > -1;
         let durumUygun = durum === "" || satir.data("durum") === durum;
         let rolUygun = rol === "" || satir.data("rol") === rol;
-        if (metinUygun && durumUygun && rolUygun) satir.fadeIn(200); else satir.fadeOut(200);
+        if (metinUygun && durumUygun && rolUygun) satir.show(); else satir.hide();
         });
         }
 
@@ -303,13 +259,10 @@
         $("#kullaniciForm")[0].reset();
         $("#kId").val(0);
         $("#modalBaslik").text("Yeni Kullanıcı Tanımla");
-        $("#kSifre, #kSifreTekrar").attr("required", true);
         $("#kullaniciModal").modal("show");
         }
 
         function editKullanici(id) {
-        $("#kullaniciForm")[0].reset();
-        $("#kSifre, #kSifreTekrar").attr("required", false);
         $.get("/Home/KullaniciDetay/" + id, function (data) {
         if (data) {
         $("#kId").val(data.id);
@@ -319,7 +272,6 @@
         $("#kEposta").val(data.eposta);
         $("#kTelefon").val(data.telefon);
         $("#kDurum").val(data.durum);
-        $("#kIsOnayli").prop("checked", data.isOnayli);
         $("#kRol").val(data.rolId);
         $("#modalBaslik").text("Kullanıcı Düzenle");
         $("#kullaniciModal").modal("show");
@@ -328,31 +280,19 @@
         }
 
         function viewIsYuku(id, adSoyad) {
-        $("#isYukuPersonelAd").text(adSoyad + " isimli personelin aktif görevleri listeleniyor.");
         $("#isYukuTableBody").empty();
-        $("#noIsYukuAlert").addClass("d-none");
-
         $.get("/Home/PersonelIsYuku/" + id, function (data) {
         if (data && data.length > 0) {
         data.forEach(item => {
-        let badgeColor = "bg-primary";
-        if(item.durum === "Tamamlandı") badgeColor = "bg-success";
-        if(item.durum === "İptal") badgeColor = "bg-danger";
-        if(item.durum === "İşlemde") badgeColor = "bg-warning text-dark";
-
-        let row = `
+        $("#isYukuTableBody").append(`
         <tr>
-        <td class="fw-bold">${item.musteriAd}</td>
-        <td class="small text-wrap" style="max-width:300px;">${item.arizaAciklamasi || '-'}</td>
-        <td class="small">${item.tarih}</td>
-        <td><span class="badge ${badgeColor}">${item.durum}</span></td>
-        <td class="text-end fw-bold">${item.servisUcreti.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
-        </tr>
-        `;
-        $("#isYukuTableBody").append(row);
+        <td>${item.musteriAd}</td>
+        <td>${item.arizaAciklamasi || '-'}</td>
+        <td>${item.tarih}</td>
+        <td><span class="badge bg-primary">${item.durum}</span></td>
+        <td class="text-end fw-bold">${item.servisUcreti} ₺</td>
+        </tr>`);
         });
-        } else {
-        $("#noIsYukuAlert").removeClass("d-none");
         }
         $("#isYukuModal").modal("show");
         });
@@ -360,10 +300,6 @@
 
         $("#kullaniciForm").submit(function (e) {
         e.preventDefault();
-        if ($("#kSifre").val() !== $("#kSifreTekrar").val()) {
-        Swal.fire('Hata', 'Şifreler eşleşmiyor!', 'error');
-        return;
-        }
         $.post("/Home/KullaniciKaydet", $(this).serialize(), function (r) {
         if (r.success) {
         Swal.fire('Başarılı', 'İşlem tamamlandı.', 'success').then(() => location.reload());
@@ -376,11 +312,10 @@
         function deleteKullanici(id) {
         Swal.fire({
         title: 'Emin misiniz?',
-        text: "Kullanıcı silinecek (pasife alınacak)!",
+        text: "Kullanıcı pasife alınacak!",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Evet, sil!',
-        cancelButtonText: 'Vazgeç'
+        confirmButtonText: 'Evet, sil!'
         }).then((result) => {
         if (result.isConfirmed) {
         $.post("/Home/KullaniciSil", { id: id }, function (r) {

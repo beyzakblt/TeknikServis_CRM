@@ -74,63 +74,33 @@
                 border-bottom: 1px solid #e2e8f0;
             }
 
-            /* Bildirim Paneli Stilleri */
-            #notification-wrapper {
-                position: fixed;
-                bottom: 30px;
-                right: 30px;
-                z-index: 1060;
-            }
-
-            #notifyBtn {
-                width: 55px;
-                height: 55px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            }
-
-                #notifyBtn:hover {
-                    transform: scale(1.1) rotate(10deg);
-                }
-
-            #notifyPanel {
-                width: 320px;
-                position: absolute;
-                bottom: 70px;
-                right: 0;
-                display: none;
-                border: none;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-            }
-
-            .notify-item {
-                padding: 12px 16px;
-                border-bottom: 1px solid #f1f5f9;
-                transition: background 0.2s;
-            }
-
-                .notify-item:hover {
-                    background-color: #f8fafc;
-                }
-
-            .notify-icon-circle {
-                width: 35px;
-                height: 35px;
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
-            }
-
             .footer {
                 padding: 1rem 1.5rem;
                 background: #fff;
                 border-top: 1px solid #e2e8f0;
                 font-size: 0.85rem;
+            }
+
+            /* Menü Animasyonu */
+            .animate {
+                animation-duration: 0.3s;
+                animation-fill-mode: both;
+            }
+
+            @@keyframes slideIn {
+                from {
+                    transform: translateY(1rem);
+                    opacity: 0;
+                }
+
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+
+            .slideIn {
+                animation-name: slideIn;
             }
     </style>
 </head>
@@ -145,19 +115,18 @@
             <div class="p-3 small text-uppercase text-muted fw-bold" style="font-size: 0.7rem;">Ana Menü</div>
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a href="/Home/Index" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")"><i class="bi bi-grid-1x2-fill"></i>  Dashboard</a>
+                    <a href="/Home/Index" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                        <i class="bi bi-grid-1x2-fill me-2"></i> Dashboard
+                    </a>
                 </li>
-                <li><a href="/Musteri/Index" class="nav-link"><i class="bi bi-people-fill"></i>  Müşteriler</a></li>
-                <li><a href="/Cihaz/Index" class="nav-link"><i class="bi bi-pc-display"></i>  Cihazlar</a></li>
-                <li><a href="/ServisKayit/Index" class="nav-link"><i class="bi bi-tools"></i>  İş Emirleri</a></li>
-                <li><a href="/Randevu/Index" class="nav-link"><i class="bi bi-calendar-event"></i>  Randevu & Takvim</a></li>
-                <li><a href="/Home/Kullanicilar" class="nav-link"><i class="bi bi-person-badge-fill"></i>  Teknisyen Takibi</a></li>
-                <li><a href="/Finans/KasaHareketi" class="nav-link"><i class="bi bi-wallet2"></i>  Tahsilat & Finans</a></li>
-                <li><a href="/Bildirim" class="nav-link"><i class="bi bi-bell-fill"></i>  Bildirimler</a></li>
-                <li><a href="/Rapor" class="nav-link"><i class="bi bi-bar-chart-line-fill"></i>  Raporlama</a></li>
-                <li><a href="/Admin/Roller" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Roller" ? "active" : "")"><i class="bi bi-shield-lock-fill"></i>  Rol & Yetki</a></li>
-               
-              
+                <li><a href="/Musteri/Index" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Musteri" ? "active" : "")"><i class="bi bi-people-fill me-2"></i> Müşteriler</a></li>
+                <li><a href="/Cihaz/Index" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Cihaz" ? "active" : "")"><i class="bi bi-pc-display me-2"></i> Cihazlar</a></li>
+                <li><a href="/ServisKayit/Index" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "ServisKayit" ? "active" : "")"><i class="bi bi-tools me-2"></i> İş Emirleri</a></li>
+                <li><a href="/Randevu/Index" class="nav-link"><i class="bi bi-calendar-event me-2"></i> Randevu & Takvim</a></li>
+                <li><a href="/Home/Kullanicilar" class="nav-link"><i class="bi bi-person-badge-fill me-2"></i> Teknisyen Takibi</a></li>
+                <li><a href="/Finans/KasaHareketi" class="nav-link"><i class="bi bi-wallet2 me-2"></i> Tahsilat & Finans</a></li>
+                <li><a href="/Home/Bildirim" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Bildirim" ? "active" : "")"><i class="bi bi-bell-fill me-2"></i> Bildirimler</a></li>
+                <li><a href="/Admin/Roller" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" ? "active" : "")"><i class="bi bi-shield-lock-fill me-2"></i> Rol & Yetki</a></li>
             </ul>
         </nav>
 
@@ -183,7 +152,6 @@
                                     <div class="fw-bold">@fullName</div>
                                 </li>
                                 <li><a class="dropdown-item py-2" href="/Home/Profil"><i class="bi bi-person-circle me-2 text-primary"></i>Profilim</a></li>
-                                <li><a class="dropdown-item py-2" href="/Ayarlar"><i class="bi bi-gear me-2 text-secondary"></i>Ayarlar</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item py-2 text-danger fw-bold" href="/Account/Logout"><i class="bi bi-box-arrow-right me-2"></i>Güvenli Çıkış</a></li>
                             </ul>
@@ -203,25 +171,6 @@
         </div>
     </div>
 
-    <div id="notification-wrapper">
-        <button id="notifyBtn" class="btn btn-primary shadow-lg border-0 position-relative">
-            <i class="bi bi-bell-fill fs-4"></i>
-            <span id="notifyCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">0</span>
-        </button>
-
-        <div id="notifyPanel" class="card rounded-4 overflow-hidden shadow-lg animate slideIn">
-            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                <span class="fw-bold text-dark small"><i class="bi bi-lightning-charge-fill text-warning me-1"></i> Bildirimler</span>
-                <span id="notifyStatus" class="badge bg-light text-muted" style="font-size: 9px;">Güncel</span>
-            </div>
-            <div class="card-body p-0" id="notifyContainer" style="max-height: 350px; overflow-y: auto;">
-            </div>
-            <div class="card-footer bg-light text-center py-2 border-0">
-                <a href="/Bildirim" class="text-decoration-none small fw-bold">Tümünü Gör</a>
-            </div>
-        </div>
-    </div>
-
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -232,56 +181,7 @@
         $('#sidebar').toggleClass('active');
         $(this).find('i').toggleClass('bi-text-indent-left bi-text-indent-right');
         });
-
-        // Bildirim Paneli Toggle
-        $('#notifyBtn').click(function(e) {
-        e.stopPropagation();
-        $('#notifyPanel').fadeToggle(200);
         });
-
-        $(document).click(function() {
-        $('#notifyPanel').fadeOut(200);
-        });
-
-        $('#notifyPanel').click(function(e) {
-        e.stopPropagation();
-        });
-
-        // Bildirimleri Kontrol Et (Her 1 dakikada bir)
-        checkNotifications();
-        setInterval(checkNotifications, 60000);
-        });
-
-        function checkNotifications() {
-        $.get('/Home/GetNotifications', function(res) {
-        if(res.count > 0) {
-        $('#notifyCount').text(res.count).removeClass('d-none');
-        let html = "";
-        res.items.forEach(item => {
-        let icon = item.tip === 'payment' ? 'bi-cash-stack text-success' : 'bi-tools text-warning';
-        let bg = item.tip === 'payment' ? 'rgba(25, 135, 84, 0.1)' : 'rgba(255, 193, 7, 0.1)';
-
-        html += `
-        <div class="notify-item d-flex align-items-center">
-        <div class="notify-icon-circle me-3" style="background: ${bg}">
-        <i class="bi ${icon} fs-5"></i>
-        </div>
-        <div class="flex-grow-1">
-        <div class="d-flex justify-content-between">
-        <span class="fw-bold small" style="font-size:0.75rem">${item.baslik}</span>
-        <span class="text-muted" style="font-size:0.65rem">${item.tarih}</span>
-        </div>
-        <div class="text-muted truncate" style="font-size:0.7rem">${item.detay}</div>
-        </div>
-        </div>`;
-        });
-        $('#notifyContainer').html(html);
-        } else {
-        $('#notifyCount').addClass('d-none');
-        $('#notifyContainer').html('<div class="p-4 text-center text-muted small"><i class="bi bi-bell-slash d-block fs-2 mb-2"></i>Yeni bildirim yok.</div>');
-        }
-        });
-        }
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

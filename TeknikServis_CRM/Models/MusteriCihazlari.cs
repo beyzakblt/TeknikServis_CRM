@@ -28,7 +28,7 @@ public partial class MusteriCihazlari
     public DateTime? KurulumTarihi { get; set; }
 
     public bool? AktifMi { get; set; }
-    public string GorselYolu { get; set; }
+  
 
     // ============================================================
     // NAVIGASYON PROPERTY'LERİ

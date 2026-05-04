@@ -5,7 +5,7 @@ using System.Security.Claims;
 using System.Net;
 using System.Net.Mail;
 using TeknikServis_CRM.Models;
-using TeknikServis_CRM.ViewModels;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace TeknikServis_CRM.Controllers

@@ -1,5 +1,4 @@
-﻿#nullable disable
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
@@ -8,6 +7,7 @@ using QuestPDF.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using TeknikServis_CRM.Models;
 
@@ -21,7 +21,7 @@ namespace TeknikServis_CRM.Controllers
 
         public async Task<IActionResult> Index()
         {
-            ViewBag.Musteriler = await _context.Musterilers.AsNoTracking().Where(x => !x.SilindiMi).OrderBy(x => x.AdSoyad).ToListAsync();
+            ViewBag.Musteriler = await _context.Musterilers.AsNoTracking().OrderBy(x => x.AdSoyad).ToListAsync();
             ViewBag.Durumlar = await _context.ServisDurumlaris.AsNoTracking().OrderBy(x => x.Id).ToListAsync();
             ViewBag.Teknisyenler = await (from k in _context.Kullanicilars
                                           join kr in _context.KullaniciRolleris on k.Id equals kr.KullaniciId
@@ -42,7 +42,7 @@ namespace TeknikServis_CRM.Controllers
                                join c in _context.MusteriCihazlaris on s.MusteriCihazId equals c.Id into cj
                                from c in cj.DefaultIfEmpty()
                                let isEmri = _context.IsEmirleris.FirstOrDefault(ie => ie.MusteriId == s.MusteriId && ie.CihazId == s.MusteriCihazId)
-                               let teknisyen = _context.Kullanicilars.FirstOrDefault(k => k.Id == isEmri.TeknisyenId)
+                               let teknisyen = isEmri != null ? _context.Kullanicilars.FirstOrDefault(k => k.Id == isEmri.TeknisyenId) : null
                                orderby s.Id descending
                                select new
                                {
@@ -50,35 +50,15 @@ namespace TeknikServis_CRM.Controllers
                                    s.ServisNo,
                                    MusteriAd = m != null ? m.AdSoyad : "Bilinmeyen Müşteri",
                                    CihazBilgi = c != null ? c.Marka + " " + c.Model : "Cihaz Belirtilmemiş",
-                                   DurumAdi = isEmri != null ? isEmri.Durum : (d != null ? d.DurumAdi : "Durum Atanmadı"),
+                                   DurumAdi = isEmri != null ? isEmri.Durum : (d != null ? d.DurumAdi : "Yeni Atandı"),
                                    RenkKodu = d != null ? d.RenkKodu : "#cccccc",
                                    s.ArizaAciklamasi,
                                    s.Ucret,
                                    s.OdemeDurumu,
                                    OdemeTarihi = s.KapanisTarihi,
-                                   ServisTarihi = s.ServisTarihi,
+                                   s.ServisTarihi,
                                    TeknisyenAd = teknisyen != null ? teknisyen.Ad + " " + teknisyen.Soyad : "Atanmadı"
                                }).AsNoTracking().ToListAsync();
-
-            return Json(liste);
-        }
-
-        [HttpGet]
-        public async Task<JsonResult> GetYaklasanOdemeler()
-        {
-            var bugun = DateTime.Today;
-            var ucGunSonra = bugun.AddDays(3);
-
-            var liste = await _context.ServisKayitlaris
-                .AsNoTracking()
-                .Include(x => x.Musteri)
-                .Where(x => x.OdemeDurumu == "Bekliyor" && x.KapanisTarihi.HasValue && x.KapanisTarihi >= bugun && x.KapanisTarihi <= ucGunSonra)
-                .Select(s => new {
-                    s.ServisNo,
-                    MusteriAd = s.Musteri.AdSoyad,
-                    s.Ucret,
-                    Tarih = s.KapanisTarihi.Value.ToString("dd.MM.yyyy")
-                }).ToListAsync();
 
             return Json(liste);
         }
@@ -88,19 +68,20 @@ namespace TeknikServis_CRM.Controllers
         {
             try
             {
-                if (model.Id == 0)
+                model.KapanisTarihi = VadeTarihi;
+                bool isNew = model.Id == 0;
+
+                if (isNew)
                 {
                     var sonKayit = await _context.ServisKayitlaris.OrderByDescending(x => x.Id).FirstOrDefaultAsync();
                     model.ServisNo = "SRV-" + DateTime.Now.Year + "-" + ((sonKayit?.Id ?? 0) + 1001);
                     model.ServisTarihi = DateTime.Now;
-                    model.KapanisTarihi = VadeTarihi;
                     _context.ServisKayitlaris.Add(model);
                 }
                 else
                 {
                     var ent = await _context.ServisKayitlaris.FindAsync(model.Id);
                     if (ent == null) return Json(new { success = false, message = "Kayıt bulunamadı." });
-
                     ent.MusteriId = model.MusteriId;
                     ent.MusteriCihazId = model.MusteriCihazId;
                     ent.ServisDurumId = model.ServisDurumId;
@@ -108,15 +89,15 @@ namespace TeknikServis_CRM.Controllers
                     ent.Ucret = model.Ucret;
                     ent.OdemeDurumu = model.OdemeDurumu;
                     ent.KapanisTarihi = VadeTarihi;
+                    ent.YapilanIslem = model.YapilanIslem;
                 }
-
                 await _context.SaveChangesAsync();
 
+                // 1. İŞ EMRİ SENKRONİZASYONU
                 var isEmri = await _context.IsEmirleris.FirstOrDefaultAsync(x => x.MusteriId == (int)model.MusteriId && x.CihazId == model.MusteriCihazId);
-
                 if (isEmri == null)
                 {
-                    _context.IsEmirleris.Add(new IsEmirleri
+                    isEmri = new IsEmirleri
                     {
                         MusteriId = (int)model.MusteriId,
                         CihazId = model.MusteriCihazId,
@@ -126,19 +107,54 @@ namespace TeknikServis_CRM.Controllers
                         Durum = Durum ?? "Yeni Atandı",
                         OlusturmaTarihi = DateTime.Now,
                         ServisUcreti = model.Ucret
-                    });
+                    };
+                    _context.IsEmirleris.Add(isEmri);
                 }
                 else
                 {
                     isEmri.TeknisyenId = TeknisyenId;
                     isEmri.TeknikNot = TeknikNot;
-                    isEmri.Durum = Durum;
+                    isEmri.Durum = (Durum == "Tamamlandı" || model.ServisDurumId == 4) ? "Tamamlandı" : (Durum ?? isEmri.Durum);
                     isEmri.ArizaAciklamasi = model.ArizaAciklamasi;
                     isEmri.ServisUcreti = model.Ucret;
                 }
-
                 await _context.SaveChangesAsync();
 
+                // 2. TAKVİM / RANDEVU ENTEGRASYONU (YENİ EKLENDİ)
+                if (VadeTarihi.HasValue)
+                {
+                    // Eğer bu servis için zaten bir randevu varsa güncelle, yoksa yeni oluştur
+                    // Aciklama içinde ServisNo'yu arayarak eşleştirme yapıyoruz
+                    var existingRandevu = await _context.Randevulars.FirstOrDefaultAsync(r => r.MusteriId == model.MusteriId && r.Aciklama.Contains(model.ServisNo));
+
+                    var randevuData = new
+                    {
+                        Baslik = "İŞ EMRİ: " + model.ServisNo,
+                        Durum = isEmri.Durum,
+                        Renk = "#f6c23e", // İş emri rengi (Sarı)
+                        BitisTarihi = VadeTarihi.Value.AddHours(2).ToString("yyyy-MM-ddTHH:mm:ss"),
+                        GercekNot = "Otomatik Oluşturulan İş Emri: " + model.ArizaAciklamasi
+                    };
+                    string jsonPaket = JsonSerializer.Serialize(randevuData);
+
+                    if (existingRandevu == null)
+                    {
+                        _context.Randevulars.Add(new Randevular
+                        {
+                            MusteriId = model.MusteriId,
+                            RandevuTarihi = VadeTarihi,
+                            Aciklama = jsonPaket
+                        });
+                    }
+                    else
+                    {
+                        existingRandevu.RandevuTarihi = VadeTarihi;
+                        existingRandevu.Aciklama = jsonPaket;
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
+                // 3. TAHSİLAT İŞLEMLERİ
                 if (model.OdemeDurumu == "Ödendi" && (model.Ucret ?? 0) > 0)
                 {
                     var bakiyeIsliMi = await _context.TahsilatHareketleris.AnyAsync(x => x.ServisKaydiId == model.Id);
@@ -153,7 +169,33 @@ namespace TeknikServis_CRM.Controllers
                 }
                 return Json(new { success = true });
             }
-            catch (Exception ex) { return Json(new { success = false, message = "Hata: " + (ex.InnerException?.Message ?? ex.Message) }); }
+            catch (Exception ex) { return Json(new { success = false, message = "Hata: " + ex.Message }); }
+        }
+
+        [HttpGet] public async Task<JsonResult> GetServis(int id) => Json(await _context.ServisKayitlaris.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id));
+        [HttpGet]
+        public async Task<JsonResult> GetIsEmri(int servisId)
+        {
+            var servis = await _context.ServisKayitlaris.FindAsync(servisId);
+            if (servis == null) return Json(null);
+            return Json(await _context.IsEmirleris.AsNoTracking().FirstOrDefaultAsync(x => x.MusteriId == servis.MusteriId && x.CihazId == servis.MusteriCihazId));
+        }
+        [HttpPost]
+        public async Task<JsonResult> Sil(int id)
+        {
+            var s = await _context.ServisKayitlaris.FindAsync(id);
+            if (s != null) { _context.ServisKayitlaris.Remove(s); await _context.SaveChangesAsync(); }
+            return Json(new { success = true });
+        }
+
+        [HttpGet]
+        public async Task<JsonResult> GetYaklasanOdemeler()
+        {
+            var bugun = DateTime.Today;
+            var gelecekSinir = bugun.AddDays(7);
+            return Json(await _context.ServisKayitlaris.AsNoTracking().Include(x => x.Musteri)
+                .Where(x => x.OdemeDurumu == "Bekliyor" && x.KapanisTarihi.HasValue && x.KapanisTarihi >= bugun && x.KapanisTarihi <= gelecekSinir)
+                .Select(s => new { s.ServisNo, MusteriAd = s.Musteri.AdSoyad, s.Ucret, Tarih = s.KapanisTarihi.Value.ToString("dd.MM.yyyy") }).ToListAsync());
         }
 
         [HttpGet]
@@ -164,30 +206,10 @@ namespace TeknikServis_CRM.Controllers
         }
 
         [HttpGet]
-        public async Task<JsonResult> GetIsEmri(int servisId)
-        {
-            var servis = await _context.ServisKayitlaris.FindAsync(servisId);
-            if (servis == null) return Json(null);
-            return Json(await _context.IsEmirleris.AsNoTracking().FirstOrDefaultAsync(x => x.MusteriId == servis.MusteriId && x.CihazId == servis.MusteriCihazId));
-        }
-
-        [HttpGet]
-        public async Task<JsonResult> GetServis(int id) => Json(await _context.ServisKayitlaris.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id));
-
-        [HttpPost]
-        public async Task<JsonResult> Sil(int id)
-        {
-            var s = await _context.ServisKayitlaris.FindAsync(id);
-            if (s != null) { _context.ServisKayitlaris.Remove(s); await _context.SaveChangesAsync(); }
-            return Json(new { success = true });
-        }
-
-        [HttpGet]
         public async Task<IActionResult> ServisFisiIndir(int id)
         {
             var servis = await _context.ServisKayitlaris.Include(x => x.Musteri).Include(x => x.MusteriCihaz).FirstOrDefaultAsync(x => x.Id == id);
             if (servis == null) return NotFound();
-
             var document = Document.Create(container => {
                 container.Page(page => {
                     page.Margin(1, Unit.Centimetre); page.Size(PageSizes.A4); page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Verdana));
@@ -214,8 +236,47 @@ namespace TeknikServis_CRM.Controllers
                     });
                 });
             });
-
             return File(document.GeneratePdf(), "application/pdf", $"ServisFisi_{servis.ServisNo}.pdf");
+        }
+        [HttpPost]
+        public async Task<JsonResult> TeknikNotEkle(int servisId, string not)
+        {
+            try
+            {
+                var servis = await _context.ServisKayitlaris.FindAsync(servisId);
+                if (servis == null) return Json(new { success = false, message = "Kayıt bulunamadı." });
+
+                // Mevcut notun üzerine yeni notu tarihle birlikte ekliyoruz
+                // Her not arasına özel bir ayırıcı koyuyoruz ki JS ile parçalayabilelim
+                string yeniSatir = $"[{DateTime.Now:dd.MM.yyyy HH:mm}] {not}";
+
+                if (string.IsNullOrEmpty(servis.YapilanIslem))
+                    servis.YapilanIslem = yeniSatir;
+                else
+                    servis.YapilanIslem = yeniSatir + "||" + servis.YapilanIslem; // En yeni not en üstte
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            catch (Exception ex) { return Json(new { success = false, message = ex.Message }); }
+        }
+
+        [HttpGet]
+        public async Task<JsonResult> GetTeknikNotlar(int servisId)
+        {
+            var servis = await _context.ServisKayitlaris.AsNoTracking()
+                .Select(x => new { x.Id, x.YapilanIslem })
+                .FirstOrDefaultAsync(x => x.Id == servisId);
+
+            if (servis == null || string.IsNullOrEmpty(servis.YapilanIslem))
+                return Json(new List<object>());
+
+            // "||" ile ayırdığımız notları diziye çevirip gönderiyoruz
+            var notlar = servis.YapilanIslem.Split("||", StringSplitOptions.RemoveEmptyEntries)
+                .Select(n => new { icerik = n })
+                .ToList();
+
+            return Json(notlar);
         }
     }
 }
